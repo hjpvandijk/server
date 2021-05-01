@@ -1,15 +1,18 @@
 import io
 import os
+import sys
+import traceback
 import json
 from django.core import signing
 from django.http import StreamingHttpResponse
 from ...control.models import Application, Flight
 from .serializers import FlightSerializer, NewFlightSerializer
-from mongo import get_mongo_connection_handle, get_mongo_collection_handle
+from mongo import get_mongo_connection_handle, get_mongo_collection_handle, get_mongo_collection_handle_gridfs
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
+import ast
 
 class FlightInfo(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -203,6 +206,68 @@ class FlightLogDataDownloaderView(APIView):
             
             stream.write(f'{json.dumps(entry)},{os.linesep}{os.linesep}')
             counter += 1
+        
+        stream.write(f']')
+        stream.seek(0)
+        
+        response = StreamingHttpResponse(stream, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
+        
+        mongo_connection.close()
+        return response
+
+class FlightScreenCapturesDownloaderView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, flightID):
+        print("getting sc")
+        try:
+            flight = Flight.objects.get(id=flightID)
+        except Flight.DoesNotExist:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+        print("got here")
+        mongo_db_handle, mongo_connection = get_mongo_connection_handle()
+
+        # Do we have a collection for the flight in the MongoDB instance?
+        # If not, this means the flight has been created, but no data yet exists for it.
+        if not str(flight.id) in mongo_db_handle.list_collection_names():
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+        print("got here too")
+
+        # If we get here, then there is a collection -- and we can get the data for it.
+        mongo_collection_handle_gridfs = get_mongo_collection_handle_gridfs(mongo_db_handle, str(flight.id) + "_sc")
+        print("got gridfs handle")
+        # Get all of the data.
+        # This also omits the _id field that is added by MongoDB -- we don't need it.
+        log_entries = mongo_collection_handle_gridfs.find(no_cursor_timeout=True)
+        print("got entries")
+       
+        stream = io.StringIO()
+
+        stream.write(f'[{os.linesep}{os.linesep}')
+        
+        # Get the count and if it matches the length...
+        no_entries = log_entries.count()
+        print("no_entries: ", no_entries)
+        counter = 0
+        print("getting entries:")
+        try:
+            for entry in log_entries:
+                print(entry.filename)
+                dict_str = entry.read().decode("UTF-8")
+                mydata = ast.literal_eval(dict_str)
+                # print(dict_str)
+                # print(mydata)
+
+                if counter == (no_entries - 1):
+                    stream.write(f'{json.dumps(dict_str)}{os.linesep}{os.linesep}')
+                    continue
+                stream.write(f'{json.dumps(dict_str)},{os.linesep}{os.linesep}')
+                counter += 1
+        except:
+            print(sys.exc_info()[0])
+            print(traceback.format_exc())
+            return        
         
         stream.write(f']')
         stream.seek(0)

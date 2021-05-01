@@ -1,18 +1,19 @@
 from ...control.models import Application, Flight, Session
-from mongo import get_mongo_connection_handle, get_mongo_collection_handle
+from mongo import get_mongo_connection_handle, get_mongo_collection_handle, get_mongo_collection_handle_gridfs
 
-from channels.generic.websocket import JsonWebsocketConsumer
+from channels.generic.websocket import WebsocketConsumer
 from django.core.exceptions import ValidationError
 from dateutil import parser as date_parser
 from urllib.parse import urlparse
 from django.core import signing
 from datetime import datetime
+import json
 
 SUPPORTED_CLIENTS = ['0.5.1', '0.5.2', '0.5.3']
 KNOWN_REQUEST_TYPES = ['handshake', 'closedown', 'logEvents']
 BAD_REQUEST_LIMIT = 3
 
-class EndpointConsumer(JsonWebsocketConsumer):
+class EndpointConsumer(WebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,16 +30,40 @@ class EndpointConsumer(JsonWebsocketConsumer):
         self._client_ip = self.scope['client'][0]  # Is this the correct value?
         self.accept()
 
-    def receive_json(self, request_dict):
+    # def receive_json(self, request_dict):
+    #     if not self.validate_request(request_dict) or not self.validate_handshake(request_dict):
+    #         return
+        
+    #     if request_dict['type'] == 'handshake':
+    #         self.send_json(self.generate_message_object('handshakeSuccess', {
+    #             'sessionID': str(self._session.id),
+    #             'clientStartTimestamp': str(self._session.client_start_timestamp),
+    #             'newSessionCreated': self._session_created,
+    #         }))
+    #         return
+        
+    #     type_redirection = {
+    #         'logEvents': self.handle_log_events,
+    #     }
+
+    #     type_redirection[request_dict['type']](request_dict)
+
+    def receive(self, text_data=None, bytes_data=None):
+        request_dict = None
+        if text_data:
+            request_dict = json.loads(text_data)
+            print("converted")
+        elif bytes_data:
+            print("not converted")
         if not self.validate_request(request_dict) or not self.validate_handshake(request_dict):
             return
         
         if request_dict['type'] == 'handshake':
-            self.send_json(self.generate_message_object('handshakeSuccess', {
+            self.send(json.dumps(self.generate_message_object('handshakeSuccess', {
                 'sessionID': str(self._session.id),
                 'clientStartTimestamp': str(self._session.client_start_timestamp),
                 'newSessionCreated': self._session_created,
-            }))
+            })))
             return
         
         type_redirection = {
@@ -209,11 +234,19 @@ class EndpointConsumer(JsonWebsocketConsumer):
                 self._session.client_end_timestamp = date_parser.parse(item['timestamps']['eventTimestamp'])
                 self._session.server_end_timestamp = datetime.now()
                 self._session.save()
+            elif item['eventType'] == 'screenCaptureEvent':
+                print("SCREEN CAPTURE")
+                # print(item[ 'eventDetails']) 
+
 
             item['applicationID'] = str(self._application.id)
             item['flightID'] = str(self._flight.id)
-
-            if not self._mongo_collection:
-                self._mongo_collection = get_mongo_collection_handle(self._mongo_db_handle, str(self._flight.id))
             
-            self._mongo_collection.insert(item)
+            if item['eventType'] == 'screenCaptureEvent':
+                mongo_collection_sc_gridfs = get_mongo_collection_handle_gridfs(self._mongo_db_handle, str(self._flight.id) + "_sc")
+                mongo_collection_sc_gridfs.put(json.dumps(item).encode('utf-8'), filename=item['eventDetails']['sessionID'])
+            else:
+                if not self._mongo_collection:
+                    self._mongo_collection = get_mongo_collection_handle(self._mongo_db_handle, str(self._flight.id))
+                # print(item)
+                self._mongo_collection.insert(item)

@@ -177,28 +177,57 @@ class FlightListItem extends React.Component {
 
     async downloadData(event) {
         event.preventDefault();
-
-        var response = fetch(`${Constants.SERVER_API_ROOT}flight/download/${this.props.id}/`, {
+        console.log("download data")
+        var response = fetch(`${Constants.SERVER_API_ROOT}flight/download_sc/${this.props.id}/`, {
             method: 'GET',
             headers: {
                 'Authorization': `jwt ${this.props.authToken}`
             },
             })
-            .then(resp => resp.blob())  // Take the blob that is returned by the server
-            .then(blob => {             // "Click" the link for the blob, and it downloads.
-                if (blob.size == 0) {
-                    alert('There is no log data available to download for this flight at present.');
-                    return;
-                }
+            .then(resp => resp.json())  // Take the blob that is returned by the server decodeURIComponent(escape(resp))
+            .then(text => {             // "Click" the link for the blob, and it downloads.
+                // if (text.size == 0) {
+                //     alert('There is no log data available to download for this flight at present.');
+                //     return;
+                // }
+                // console.log(JSON.stringify(text[0]['eventDetails']));
+                // console.log("printing");
+                // console.log(text);
+                // const base64 = await fetch(text[0]['eventDetails']);
+                // const blob = await base64Response.blob();
+                // console.log("text size: " + text.size());
+                // console.log("text length: " + blob.size);
+                var count = text.length;
+                var lastElem = JSON.parse(text[count-1]);
+                console.log("length: " + count)
+                console.log(text[count-1])
+                console.log(typeof(lastElem))
+                console.log(lastElem["eventDetails"])
+                const inputText = lastElem["eventDetails"].replace(/['"]+/g, '');
+                // // console.log(inputText);
+                // // const blob = this.getBlob(inputText);
+
+                let link = document.createElement('a');
+                link.href = inputText;
+                link.setAttribute('download', `logui-${this.props.id}_sc.mp4`);
+                link.click();
+
+
                 
                 // To simulate a download, create a new anchor element, and add the download attribute.
                 // Then 'click' it. This forces the browser to download the blob!
-                let link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.setAttribute('download', `logui-${this.props.id}.log`);
-                link.click();
+                // let link = document.createElement('a');
+                // link.href = URL.createObjectURL(blob);
+                // link.setAttribute('download', `logui-${this.props.id}.log`);
+                // link.click();
             });
     };
+
+    async getBlob(text) {
+        const base64Response = await fetch(text[0]['eventDetails']);
+        const blob = await base64Response.blob();
+        return blob;
+    }
 
     render() {
         let fqdnElement = <span className="subtitle mono"><a href={this.props.fqdn} target="_blank">{this.props.fqdn}</a></span>;
