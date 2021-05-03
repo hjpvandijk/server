@@ -3,6 +3,8 @@ import Menu from '../applications/menu';
 import TrailItem from '../nav/trail/trailItem';
 import Constants from '../constants';
 import {Link, Redirect} from 'react-router-dom';
+import JSZip from 'jszip' 
+import { saveAs } from 'file-saver';
 
 class ViewFlightsPage extends React.Component {
 
@@ -177,6 +179,31 @@ class FlightListItem extends React.Component {
 
     async downloadData(event) {
         event.preventDefault();
+
+        var response = fetch(`${Constants.SERVER_API_ROOT}flight/download/${this.props.id}/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `jwt ${this.props.authToken}`
+            },
+            })
+            .then(resp => resp.blob())  // Take the blob that is returned by the server
+            .then(blob => {             // "Click" the link for the blob, and it downloads.
+                if (blob.size == 0) {
+                    alert('There is no log data available to download for this flight at present.');
+                    return;
+                }
+                
+                // To simulate a download, create a new anchor element, and add the download attribute.
+                // Then 'click' it. This forces the browser to download the blob!
+                let link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute('download', `logui-${this.props.id}.log`);
+                link.click();
+            });
+    };
+
+    async downloadScreenCaptures(event) {
+        event.preventDefault();
         console.log("download data")
         var response = fetch(`${Constants.SERVER_API_ROOT}flight/download_sc/${this.props.id}/`, {
             method: 'GET',
@@ -185,49 +212,32 @@ class FlightListItem extends React.Component {
             },
             })
             .then(resp => resp.json())  // Take the blob that is returned by the server decodeURIComponent(escape(resp))
-            .then(text => {             // "Click" the link for the blob, and it downloads.
-                // if (text.size == 0) {
-                //     alert('There is no log data available to download for this flight at present.');
-                //     return;
-                // }
-                // console.log(JSON.stringify(text[0]['eventDetails']));
-                // console.log("printing");
-                // console.log(text);
-                // const base64 = await fetch(text[0]['eventDetails']);
-                // const blob = await base64Response.blob();
-                // console.log("text size: " + text.size());
-                // console.log("text length: " + blob.size);
-                var count = text.length;
-                var lastElem = JSON.parse(text[count-1]);
-                console.log("length: " + count)
-                console.log(text[count-1])
-                console.log(typeof(lastElem))
-                console.log(lastElem["eventDetails"])
-                const inputText = lastElem["eventDetails"].replace(/['"]+/g, '');
-                // // console.log(inputText);
-                // // const blob = this.getBlob(inputText);
+            .then(jsonObj => {             // "Click" the link for the blob, and it downloads.
+                if (jsonObj.size == 0) {
+                    alert('There is no log data available to download for this flight at present.');
+                    return;
+                }
 
-                let link = document.createElement('a');
-                link.href = inputText;
-                link.setAttribute('download', `logui-${this.props.id}_sc.mp4`);
-                link.click();
-
-
+                let zipFile = new JSZip();
                 
-                // To simulate a download, create a new anchor element, and add the download attribute.
-                // Then 'click' it. This forces the browser to download the blob!
-                // let link = document.createElement('a');
-                // link.href = URL.createObjectURL(blob);
-                // link.setAttribute('download', `logui-${this.props.id}.log`);
-                // link.click();
+                for(var i=0; i<jsonObj.length; i++){
+                    var elem = JSON.parse(jsonObj[i]);
+                    const videoData = elem["eventDetails"].replace(/['"]+/g, '').replace("data:video/webm;codecs=vp8;base64,", "");
+                    console.log(videoData);
+                    var fileName = elem["sessionID"];
+                    // var fileName = "test";
+                    zipFile.file(fileName+".webm", videoData, {base64: true});
+                }
+                // zipFile.file("hello.txt", "aGVsbG8gd29ybGQK", {base64: true});
+                zipFile.generateAsync({type:"blob"}).then(function(propsId, content) {
+                    // see FileSaver.js
+                    console.log(propsId);
+                    console.log(String(propsId));
+                    saveAs(content, "logui-screencaptures-" + String(propsId) + ".zip");
+                }.bind(null, this.props.id)); 
+                
             });
     };
-
-    async getBlob(text) {
-        const base64Response = await fetch(text[0]['eventDetails']);
-        const blob = await base64Response.blob();
-        return blob;
-    }
 
     render() {
         let fqdnElement = <span className="subtitle mono"><a href={this.props.fqdn} target="_blank">{this.props.fqdn}</a></span>;
@@ -248,6 +258,7 @@ class FlightListItem extends React.Component {
                     <span className="subtitle">{this.props.timestampSplit.date.friendly}</span>
                 </span>
                 <span className="sessions centre">{this.props.sessions}</span>
+                <span className="icon"><Link to="" onClick={e => this.downloadScreenCaptures(e)} className="icon-container icon-download-sc dark hover">Download Screen Captures</Link></span>
                 <span className="icon"><Link to={`/flight/${this.props.id}/token/`} className="icon-container icon-token dark hover">Get Token</Link></span>
                 <span className="icon"><Link to="" onClick={e => this.downloadData(e)} className="icon-container icon-download dark hover">Download</Link></span>
                 <Link to={`/session/${this.props.id}/`} className="row-link">View Flight Sessions</Link>

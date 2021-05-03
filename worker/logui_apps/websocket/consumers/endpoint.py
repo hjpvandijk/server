@@ -244,7 +244,7 @@ class EndpointConsumer(WebsocketConsumer):
             
             if item['eventType'] == 'screenCaptureEvent':
                 mongo_collection_sc_gridfs = get_mongo_collection_handle_gridfs(self._mongo_db_handle, str(self._flight.id) + "_sc")
-                mongo_collection_sc_gridfs.put(json.dumps(item).encode('utf-8'), filename=item['eventDetails']['sessionID'])
+                mongo_collection_sc_gridfs.put(json.dumps(item).encode('utf-8'), filename=item['sessionID'])
             else:
                 if not self._mongo_collection:
                     self._mongo_collection = get_mongo_collection_handle(self._mongo_db_handle, str(self._flight.id))

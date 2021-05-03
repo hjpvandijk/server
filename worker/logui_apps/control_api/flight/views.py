@@ -253,7 +253,8 @@ class FlightScreenCapturesDownloaderView(APIView):
         print("getting entries:")
         try:
             for entry in log_entries:
-                print(entry.filename)
+                print("filename:", entry.filename)
+                print("id:", entry._id)
                 dict_str = entry.read().decode("UTF-8")
                 mydata = ast.literal_eval(dict_str)
                 # print(dict_str)
