@@ -213,28 +213,42 @@ class FlightListItem extends React.Component {
             })
             .then(resp => resp.json())  // Take the blob that is returned by the server decodeURIComponent(escape(resp))
             .then(jsonObj => {             // "Click" the link for the blob, and it downloads.
-                if (jsonObj.size == 0) {
-                    alert('There is no log data available to download for this flight at present.');
-                    return;
-                }
+                // if (jsonObj.size == 0) {
+                //     alert('There is no log data available to download for this flight at present.');
+                //     return;
+                // }
+                console.log(jsonObj);
 
                 let zipFile = new JSZip();
                 
                 for(var i=0; i<jsonObj.length; i++){
-                    var elem = JSON.parse(jsonObj[i]);
-                    const videoData = elem["eventDetails"].replace(/['"]+/g, '').replace("data:video/webm;codecs=vp8;base64,", "");
-                    console.log(videoData);
-                    var fileName = elem["sessionID"];
-                    // var fileName = "test";
-                    zipFile.file(fileName+".webm", videoData, {base64: true});
+                    console.log(jsonObj[i]);
+                    console.log(jsonObj[i]['bytes']);
+                    console.log(atob(jsonObj[i]['bytes']));
+                    console.log(decodeURI(jsonObj[i]['bytes']));
+                    const byteCharacters = jsonObj[i]['bytes'];
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+
+                    var blob = new Blob([byteArray], { type: 'video/mp4' });
+                    console.log(blob);
+                    // var elem = JSON.parse(jsonObj[i]);
+                    // const videoData = elem["eventDetails"]['chunk'] //.replace(/['"]+/g, '').replace("data:video/webm;codecs=vp8;base64,", "");
+                    // console.log(videoData);
+                    // var fileName = elem["sessionID"];
+                    // // var fileName = "test";
+                    // zipFile.file(fileName+".webm", videoData, {base64: true});
                 }
                 // zipFile.file("hello.txt", "aGVsbG8gd29ybGQK", {base64: true});
-                zipFile.generateAsync({type:"blob"}).then(function(propsId, content) {
-                    // see FileSaver.js
-                    console.log(propsId);
-                    console.log(String(propsId));
-                    saveAs(content, "logui-screencaptures-" + String(propsId) + ".zip");
-                }.bind(null, this.props.id)); 
+                // zipFile.generateAsync({type:"blob"}).then(function(propsId, content) {
+                //     // see FileSaver.js
+                //     console.log(propsId);
+                //     console.log(String(propsId));
+                //     saveAs(content, "logui-screencaptures-" + String(propsId) + ".zip");
+                // }.bind(null, this.props.id)); 
                 
             });
     };

@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 import ast
+import base64
 
 class FlightInfo(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -253,12 +254,16 @@ class FlightScreenCapturesDownloaderView(APIView):
         print("getting entries:")
         try:
             for entry in log_entries:
-                print("filename:", entry.filename)
-                print("id:", entry._id)
-                dict_str = entry.read().decode("UTF-8")
-                mydata = ast.literal_eval(dict_str)
+                # print("filename:", entry.filename)
+                # print("id:", entry._id)
+                # dict_str = entry.read().decode("UTF-8")
+                # mydata = ast.literal_eval(dict_str)
                 # print(dict_str)
                 # print(mydata)
+                encoded = base64.b64encode(entry.read())
+                data = {}
+                data['bytes'] = encoded.decode('ascii')
+                dict_str = data
 
                 if counter == (no_entries - 1):
                     stream.write(f'{json.dumps(dict_str)}{os.linesep}{os.linesep}')
