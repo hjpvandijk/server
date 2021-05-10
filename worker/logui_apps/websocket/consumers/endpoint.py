@@ -11,7 +11,6 @@ import json
 import base64
 import sys
 import traceback
-import cgi
 
 SUPPORTED_CLIENTS = ['0.5.1', '0.5.2', '0.5.3']
 KNOWN_REQUEST_TYPES = ['handshake', 'closedown', 'logEvents', 'screenCapture']
@@ -54,35 +53,28 @@ class EndpointConsumer(WebsocketConsumer):
 
     def receive(self, text_data=None, bytes_data=None):
         request_dict = None
-        print("NEW DATA")
-        # print(text_data)
-        # print(bytes_data)
-        # print(cgi.FieldStorage())
         if text_data:
             request_dict = json.loads(text_data)
-            print("converted")
-        elif bytes_data:
-            print("BINARY DATA")
-            self.handle_screen_capture(bytes_data)
-            #handle binary data
-            return
-        if not self.validate_request(request_dict) or not self.validate_handshake(request_dict):
-            return
         
-        if request_dict['type'] == 'handshake':
-            self.send(json.dumps(self.generate_message_object('handshakeSuccess', {
-                'sessionID': str(self._session.id),
-                'clientStartTimestamp': str(self._session.client_start_timestamp),
-                'newSessionCreated': self._session_created,
-            })))
-            return
-        
-        type_redirection = {
-            'logEvents': self.handle_log_events,
-            'screenCapture': self.handle_screen_capture
-        }
+            if not self.validate_request(request_dict) or not self.validate_handshake(request_dict):
+                return
+            
+            if request_dict['type'] == 'handshake':
+                self.send(json.dumps(self.generate_message_object('handshakeSuccess', {
+                    'sessionID': str(self._session.id),
+                    'clientStartTimestamp': str(self._session.client_start_timestamp),
+                    'newSessionCreated': self._session_created,
+                })))
+                return
+            
+            type_redirection = {
+                'logEvents': self.handle_log_events
+            }
 
-        type_redirection[request_dict['type']](request_dict)
+            type_redirection[request_dict['type']](request_dict)
+        elif bytes_data:
+            self.handle_screen_capture(bytes_data)
+            return
     
     def disconnect(self, close_code):
         self._mongo_connection.close()
@@ -262,13 +254,30 @@ class EndpointConsumer(WebsocketConsumer):
             self.close(code=4006)
             return
         
-            print("SCREEN CAPTURE")
-            # print(item[ 'eventDetails']) 
+
+        print("SCREEN CAPTURE")
+        # print(item[ 'eventDetails']) 
 
 
-            mongo_collection_sc_gridfs = get_mongo_collection_handle_gridfs(self._mongo_db_handle, str(self._flight.id) + "_sc")
+        mongo_collection_sc_gridfs = get_mongo_collection_handle_gridfs(self._mongo_db_handle, str(self._flight.id) + "_sc")
 
-            mongo_collection_sc_gridfs.put(binary_data)
+        # mongo_collection_sc_gridfs.put(binary_data, _id=self._session.id)
+
+        if(mongo_collection_sc_gridfs.exists(self._session.id)):
+            try:
+                entry = mongo_collection_sc_gridfs.get(self._session.id).read()
+                # entry.extend(binary_data)
+                entry += binary_data
+                mongo_collection_sc_gridfs.delete(self._session.id)
+                mongo_collection_sc_gridfs.put(entry, _id=self._session.id)
+            except:
+                print("Unexpected error:", sys.exc_info()[0])
+                print(traceback.print_exc())
+                return
+            
+        else:
+            # binary_array = bytearray(binary_data)
+            mongo_collection_sc_gridfs.put(binary_data, _id=self._session.id)
      
 
     # def handle_screen_capture(self, request_dict):

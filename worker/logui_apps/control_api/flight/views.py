@@ -221,27 +221,22 @@ class FlightScreenCapturesDownloaderView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, flightID):
-        print("getting sc")
         try:
             flight = Flight.objects.get(id=flightID)
         except Flight.DoesNotExist:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
-        print("got here")
         mongo_db_handle, mongo_connection = get_mongo_connection_handle()
 
         # Do we have a collection for the flight in the MongoDB instance?
         # If not, this means the flight has been created, but no data yet exists for it.
         if not str(flight.id) in mongo_db_handle.list_collection_names():
             return Response({}, status=status.HTTP_204_NO_CONTENT)
-        print("got here too")
 
         # If we get here, then there is a collection -- and we can get the data for it.
         mongo_collection_handle_gridfs = get_mongo_collection_handle_gridfs(mongo_db_handle, str(flight.id) + "_sc")
-        print("got gridfs handle")
         # Get all of the data.
         # This also omits the _id field that is added by MongoDB -- we don't need it.
         log_entries = mongo_collection_handle_gridfs.find(no_cursor_timeout=True)
-        print("got entries")
        
         stream = io.StringIO()
 
@@ -249,13 +244,10 @@ class FlightScreenCapturesDownloaderView(APIView):
         
         # Get the count and if it matches the length...
         no_entries = log_entries.count()
-        print("no_entries: ", no_entries)
         counter = 0
-        print("getting entries:")
         try:
             for entry in log_entries:
-                # print("filename:", entry.filename)
-                # print("id:", entry._id)
+                print("id:", entry._id)
                 # dict_str = entry.read().decode("UTF-8")
                 # mydata = ast.literal_eval(dict_str)
                 # print(dict_str)
@@ -263,6 +255,7 @@ class FlightScreenCapturesDownloaderView(APIView):
                 encoded = base64.b64encode(entry.read())
                 data = {}
                 data['bytes'] = encoded.decode('ascii')
+                data['sessionID'] = str(entry._id)
                 dict_str = data
 
                 if counter == (no_entries - 1):
