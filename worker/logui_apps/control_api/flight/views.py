@@ -12,8 +12,9 @@ from mongo import get_mongo_connection_handle, get_mongo_collection_handle, get_
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-import ast
 import base64
+import pandas as pd
+import math 
 
 class FlightInfo(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -276,3 +277,79 @@ class FlightScreenCapturesDownloaderView(APIView):
         
         mongo_connection.close()
         return response
+
+class FlightLogEventCounterView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, flightID):
+
+        try:
+            flight = Flight.objects.get(id=flightID)
+        except Flight.DoesNotExist:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+        mongo_db_handle, mongo_connection = get_mongo_connection_handle()
+
+        # Do we have a collection for the flight in the MongoDB instance?
+        # If not, this means the flight has been created, but no data yet exists for it.
+        if not str(flight.id) in mongo_db_handle.list_collection_names():
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+        
+        # If we get here, then there is a collection -- and we can get the data for it.
+        mongo_collection_handle = get_mongo_collection_handle(mongo_db_handle, str(flight.id))
+
+        # Get all of the data.
+        # This also omits the _id field that is added by MongoDB -- we don't need it.
+        log_entries = mongo_collection_handle.find({}, {'_id': False})
+        stream = io.StringIO()
+
+        stream.write(f'[{os.linesep}{os.linesep}')
+        
+        # Get the count and if it matches the length...
+        # no_entries = log_entries.count()
+        log_entries_list = list(log_entries)
+        # print(log_entries_list)
+        print("got entries")
+        entries = {}
+        try:
+
+            # log_entries_json = json.loads(log_entries_list)
+            df = pd.json_normalize(log_entries_list)
+            unique = df['sessionID'].unique()
+            all_values = []
+            for i, id in enumerate(unique):
+                if id is None:
+                    continue
+                session = df[ df['sessionID'] == id]
+                unique_vals = session['eventDetails.name'].unique()
+                value_counts = session['eventDetails.name'].value_counts()
+                # entry = {"sessionID": id, "value_counts": {}}
+                entries[id] = {}
+                entries[id]["value_counts"] = {}   
+                for val in unique_vals:
+                    if(not (isinstance(val, float) and math.isnan(val))):
+                        if val not in all_values:
+                            all_values.append(val)
+                        count = value_counts.get(val)
+                        entries[id]["value_counts"][val] = int(count)
+                # jsonObj = json.dumps(entry)
+
+                # if i == unique.size - 1:
+                #     stream.write(f'{json.dumps(entry)}{os.linesep}{os.linesep}')
+                #     continue
+                
+            stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
+            stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
+
+            stream.write(f']')
+            stream.seek(0)
+
+            response = StreamingHttpResponse(stream, content_type='application/json')
+            response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
+            
+            mongo_connection.close()
+            return response
+        except:
+            print(sys.exc_info()[0])
+            print(traceback.format_exc())
+            return 

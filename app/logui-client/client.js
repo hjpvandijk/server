@@ -11,6 +11,7 @@ import ApplicationsNewPage from './applications/add';
 
 import FlightsLandingPage from './flight/landing';
 import FlightAuthorisationTokenPage from './flight/token';
+import FlightDashboard from './flight/dashboard'
 import FlightAddPage from './flight/add';
 
 import ViewSessionPage from './session/landing';
@@ -255,6 +256,13 @@ class LogUIClientApp extends React.Component {
                         replace
                         render={
                             (props) => (<FlightAuthorisationTokenPage {...props} clientMethods={this.methodReferences} isLoggedIn={this.state.isLoggedIn} />)}
+                    />
+
+                    <Route
+                        path="/flight/:id/dashboard"
+                        replace
+                        render={
+                            (props) => (<FlightDashboard {...props} clientMethods={this.methodReferences} isLoggedIn={this.state.isLoggedIn} />)}
                     />
 
                     <Route

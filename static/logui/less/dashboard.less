@@ -1,0 +1,16 @@
+@import 'global.less';
+
+main section div.table.session.analytics div.row {
+    grid-template-columns: 
+        0.5fr 
+        2fr 
+        repeat(var(--total), 1fr);
+        // 1fr 1fr 1fr 1fr 1fr;
+    
+    display: grid;
+}
+
+main section div.table.session.analytics div.row span.browser {
+    position: relative;
+    right: 5px;
+}

@@ -20,7 +20,8 @@ RUN apk add --update --no-cache \
         musl-dev \
         postgresql-dev \
         nodejs \
-        npm
+        npm \
+        g++
 
 RUN mkdir -p /logui/worker/
 WORKDIR /logui/worker
