@@ -26,7 +26,8 @@ urlpatterns = [
     path('flight/info/<uuid:flightID>/token/', flight_views.FlightAuthorisationTokenView.as_view()),
     path('flight/download/<uuid:flightID>/', flight_views.FlightLogDataDownloaderView.as_view()),
     path('flight/download_sc/<uuid:flightID>/', flight_views.FlightScreenCapturesDownloaderView.as_view()),
-    path('flight/dashboard/eventcount/<uuid:flightID>/', flight_views.FlightLogEventCounterView.as_view()),
+    path('flight/dashboard/eventcount/<uuid:flightID>/', flight_views.FlightLogInteractionEventCounterView.as_view()),
+    path('flight/dashboard/statistics/<uuid:flightID>/', flight_views.FlightLogStatisticsView.as_view()),
 
 
 

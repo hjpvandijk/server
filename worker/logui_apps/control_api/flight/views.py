@@ -3,11 +3,15 @@ import os
 import sys
 import traceback
 import json
+from typing import Dict
 from django.core import signing
 from django.http import StreamingHttpResponse
 from ...control.models import Application, Flight
 from .serializers import FlightSerializer, NewFlightSerializer
 from mongo import get_mongo_connection_handle, get_mongo_collection_handle, get_mongo_collection_handle_gridfs
+from ..dashboard.dwell_time import dwell_time
+from ..dashboard.session_duration import session_duration
+from ..dashboard.time_between_queries import time_between_queries
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -15,6 +19,8 @@ from rest_framework import permissions, status
 import base64
 import pandas as pd
 import math 
+
+statisticMethods = [dwell_time, session_duration, time_between_queries]
 
 class FlightInfo(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -278,7 +284,83 @@ class FlightScreenCapturesDownloaderView(APIView):
         mongo_connection.close()
         return response
 
-class FlightLogEventCounterView(APIView):
+class FlightLogInteractionEventCounterView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, flightID):
+
+        try:
+            flight = Flight.objects.get(id=flightID)
+        except Flight.DoesNotExist:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+        mongo_db_handle, mongo_connection = get_mongo_connection_handle()
+
+        # Do we have a collection for the flight in the MongoDB instance?
+        # If not, this means the flight has been created, but no data yet exists for it.
+        if not str(flight.id) in mongo_db_handle.list_collection_names():
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+        
+        # If we get here, then there is a collection -- and we can get the data for it.
+        mongo_collection_handle = get_mongo_collection_handle(mongo_db_handle, str(flight.id))
+
+        # Get all of the data.
+        # This also omits the _id field that is added by MongoDB -- we don't need it.
+        log_entries = mongo_collection_handle.find({}, {'_id': False})
+        stream = io.StringIO()
+
+        stream.write(f'[{os.linesep}{os.linesep}')
+        
+        # Get the count and if it matches the length...
+        # no_entries = log_entries.count()
+        log_entries_list = list(log_entries)
+        # print(log_entries_list)
+        print("got entries")
+        entries = {}
+        try:
+            # log_entries_json = json.loads(log_entries_list)
+            df = pd.json_normalize(log_entries_list)
+            unique = df['sessionID'].unique()
+            all_values = []
+            for i, id in enumerate(unique):
+                if id is None:
+                    continue
+                session = df[ df['sessionID'] == id]
+                # session = session[ session['eventType'] == 'interactionEvent']
+                unique_vals = session['eventDetails.name'].unique()
+                value_counts = session['eventDetails.name'].value_counts()
+                # entry = {"sessionID": id, "value_counts": {}}
+                entries[id] = {}
+                entries[id]["value_counts"] = {}   
+                for val in unique_vals:
+                    if(not (isinstance(val, float) and math.isnan(val))):
+                        if val not in all_values:
+                            all_values.append(val)
+                        count = value_counts.get(val)
+                        entries[id]["value_counts"][val] = int(count)
+                # jsonObj = json.dumps(entry)
+
+                # if i == unique.size - 1:
+                #     stream.write(f'{json.dumps(entry)}{os.linesep}{os.linesep}')
+                #     continue
+                
+            stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
+            stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
+
+            stream.write(f']')
+            stream.seek(0)
+
+            response = StreamingHttpResponse(stream, content_type='application/json')
+            response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
+            
+            mongo_connection.close()
+            return response
+        except:
+            print(sys.exc_info()[0])
+            print(traceback.format_exc())
+            return 
+
+class FlightLogStatisticsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, flightID):
@@ -321,23 +403,20 @@ class FlightLogEventCounterView(APIView):
                 if id is None:
                     continue
                 session = df[ df['sessionID'] == id]
-                unique_vals = session['eventDetails.name'].unique()
-                value_counts = session['eventDetails.name'].value_counts()
-                # entry = {"sessionID": id, "value_counts": {}}
+                # session = session[ session['eventType'] == 'interactionEvent']
                 entries[id] = {}
-                entries[id]["value_counts"] = {}   
-                for val in unique_vals:
-                    if(not (isinstance(val, float) and math.isnan(val))):
-                        if val not in all_values:
-                            all_values.append(val)
-                        count = value_counts.get(val)
-                        entries[id]["value_counts"][val] = int(count)
-                # jsonObj = json.dumps(entry)
-
-                # if i == unique.size - 1:
-                #     stream.write(f'{json.dumps(entry)}{os.linesep}{os.linesep}')
-                #     continue
-                
+                for func in statisticMethods:
+                    entry = func(session)
+                    if isinstance(entry, dict) and "average" in entry.keys() and "total" in entry.keys():   #To do: make adaptive for all keys in dict
+                        entries[id][func.__name__ + "_total"] = entry["total"]
+                        entries[id][func.__name__ + "_average"] = entry["average"]
+                        if i==0:
+                            all_values.append(func.__name__ +  "_total")
+                            all_values.append(func.__name__ +  "_average")
+                    else:
+                        entries[id][func.__name__] = entry
+                        if i==0:
+                            all_values.append(func.__name__)
             stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
             stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
 
@@ -352,4 +431,4 @@ class FlightLogEventCounterView(APIView):
         except:
             print(sys.exc_info()[0])
             print(traceback.format_exc())
-            return 
+            return

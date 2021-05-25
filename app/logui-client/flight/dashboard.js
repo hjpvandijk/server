@@ -15,7 +15,8 @@ class FlightDashboard extends React.Component {
             hasFailed: false,
             flightInfo: null,
             sessionListing: [],
-            eventCounts: null
+            eventCounts: null,
+            statistics: null
         };
 
         this.toggleFlightStatus = this.toggleFlightStatus.bind(this);
@@ -76,6 +77,7 @@ class FlightDashboard extends React.Component {
         await this.getFlightDetails();
         await this.getSessionListings();
         await this.getEventCounts();
+        await this.getStatistics();
         this.props.clientMethods.setMenuComponent(Menu);
         this.props.clientMethods.setTrailComponent(this.getTrail());
     }
@@ -85,6 +87,7 @@ class FlightDashboard extends React.Component {
             await this.getFlightDetails();
             await this.getSessionListings();
             await this.getEventCounts();
+            await this.getStatistics();
             this.props.clientMethods.setTrailComponent(this.getTrail());
         }
     }
@@ -115,12 +118,25 @@ class FlightDashboard extends React.Component {
             },
             })
             .then(resp => resp.json())  // Take the json array that is returned by the server.
-            .then(jsonObj => {             // Create a zipfile containing all screencaptures, named with their corresponding session id.
-                console.log("getEventCounts")
-                console.log(jsonObj);
-                
+            .then(jsonObj => {             // Create a zipfile containing all screencaptures, named with their corresponding session id.                
                 this.setState({
                     eventCounts: jsonObj,
+                });
+            });
+    };
+
+    async getStatistics() {
+        var response = fetch(`${Constants.SERVER_API_ROOT}flight/dashboard/statistics/${this.state.flightInfo.id}/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `jwt ${this.props.clientMethods.getLoginDetails().token}`
+            },
+            })
+            .then(resp => resp.json())  // Take the json array that is returned by the server.
+            .then(jsonObj => {             // Create a zipfile containing all screencaptures, named with their corresponding session id.                
+                console.log(jsonObj)
+                this.setState({
+                    statistics: jsonObj,
                 });
             });
     };
@@ -129,6 +145,7 @@ class FlightDashboard extends React.Component {
         let sessionListing = this.state.sessionListing;
         let authToken = this.props.clientMethods.getLoginDetails().token;
         let eventCounts = this.state.eventCounts;
+        let statistics = this.state.statistics;
 
 
         if (this.state.hasFailed) {
@@ -137,16 +154,25 @@ class FlightDashboard extends React.Component {
             );
         }
         
-        if (!this.state.flightInfo || !this.state.eventCounts) {
+        if (!this.state.flightInfo || !this.state.eventCounts || !this.state.statistics) {
             return(null); // Could add a loading thing here.
         }
+
+        const statisticNames = [];
+        this.state.statistics[this.state.statistics.length - 1].forEach(element => {
+            var el = <span className="double centre" >
+                <span key={element+"_title"} className="title analytics">{element}</span>
+                <span key={element+"_subtitle"} className="subtitle">statistic</span>
+            </span>
+            statisticNames.push(el)
+        });
+
         const eventNames = [];
-
-        
-
         this.state.eventCounts[this.state.eventCounts.length - 1].forEach(element => {
-            var el = <span key={element.id} className="centre">{element}</span>
-            // el.style.setProperty('--total', 0);
+            var el = <span className="double centre" >
+                <span key={element+"_title"} className="title analytics">{element}</span>
+                <span key={element+"_subtitle"} className="subtitle">event</span>
+            </span>
             eventNames.push(el)
         });
 
@@ -174,10 +200,11 @@ class FlightDashboard extends React.Component {
 
                         :
                         
-                        <div className="table session analytics" style={{'--total': this.state.eventCounts[this.state.eventCounts.length - 1].length}}>
+                        <div className="table session analytics" style={{'--totalEvents': this.state.eventCounts[this.state.eventCounts.length - 1].length, '--totalStatistics': this.state.statistics[this.state.statistics.length - 1].length}}>
                             <div className="row header">
                                 <span className="centre">Group</span>
                                 <span className="centre"><strong>SessionID</strong></span>
+                                {statisticNames}
                                 {eventNames}
                                 {/* <span></span>
                                 <span></span>
@@ -192,6 +219,8 @@ class FlightDashboard extends React.Component {
                                     id={sessionListing[key].id}
                                     events = {eventCounts[eventCounts.length - 1]}
                                     eventCounts = {eventCounts[0][sessionListing[key].id]}
+                                    statisticNames = {statistics[statistics.length -1]}
+                                    statisticValues = {statistics[0][sessionListing[key].id]}
                                     ip={sessionListing[key].ip_address}
                                     splitTimestamps={sessionListing[key].split_timestamps}
                                     agentDetails={sessionListing[key].agent_details}
@@ -216,6 +245,16 @@ class SessionListItem extends React.Component {
 
     render() {
 
+        const valuePerStatistic = []
+        this.props.statisticNames.forEach(statistic => {
+            var value = (this.props.statisticValues == undefined) ? 0 : (this.props.statisticValues[statistic] == undefined ? 0 : this.props.statisticValues[statistic]);
+            valuePerStatistic.push(
+                <span className="centre">
+                    <span key={this.props.id + statistic} className="title mono"> {value} </span>
+                </span>
+            );
+        });
+
         const countPerEvent = []
         this.props.events.forEach(event => {
             countPerEvent.push(
@@ -229,7 +268,7 @@ class SessionListItem extends React.Component {
         return (
             <div className="row double-height">
                 <span className="centre">
-                    <input className="title mono" type="text" style={{width: "80px"}}/>
+                    <input className="title mono" type="text" style={{width: "60px"}}/>
                     {/* <span className="title mono">1</span> */}
                 </span>
                 <span className="centre">
@@ -239,7 +278,7 @@ class SessionListItem extends React.Component {
                 {/* <span className="double centre">
                     <span className="title mono"> {(this.props.eventCounts == undefined) ? 0 : (this.props.eventCounts["value_counts"]["inputgrouptest"] == undefined ? 0 : this.props.eventCounts["value_counts"]["inputgrouptest"])} </span>
                 </span> */}
-
+                {valuePerStatistic}
                 {countPerEvent}
                     
                 {/* <span className="icon"><span className={`icon-container icon-${this.props.agentDetails.is_desktop ? 'desktop': 'phone'} dark`}></span></span>
