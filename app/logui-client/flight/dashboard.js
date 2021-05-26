@@ -4,6 +4,7 @@ import TrailItem from '../nav/trail/trailItem';
 import Constants from '../constants';
 import LogUIDevice from '../common/logUIDevice';
 import {Link, Redirect} from 'react-router-dom';
+import Plot from 'react-plotly.js';
 
 
 class FlightDashboard extends React.Component {
@@ -16,7 +17,7 @@ class FlightDashboard extends React.Component {
             flightInfo: null,
             sessionListing: [],
             eventCounts: null,
-            statistics: null
+            statistics: null,
         };
 
         this.toggleFlightStatus = this.toggleFlightStatus.bind(this);
@@ -177,13 +178,18 @@ class FlightDashboard extends React.Component {
         });
 
         return (
+            
+
             <main>
+                 
                 <section>
                     <div className="header-container">
                         <h1><span onClick={this.toggleFlightStatus} className={`indicator clickable ${this.state.flightInfo.is_active ? 'green' : 'red'}`}></span>{this.state.flightInfo.name}<span className="subtitle">{this.state.flightInfo.application.name}</span></h1>
                         <ul className="buttons-top">
                             <li><Link to={`/flight/${this.state.flightInfo.id}/token/`} className="button">View Authorisation Token</Link></li>
                         </ul>
+
+                   
                     </div>
 
                     <p>
@@ -195,21 +201,34 @@ class FlightDashboard extends React.Component {
                         <p><LogUIDevice /> is <strong>not</strong> currently accepting new sessions for this flight.</p>
                     }
 
+                    {/* <Plot
+                            data={[
+                            {
+                                x: [1, 2, 3],
+                                y: [2, 6, 3],
+                                type: 'scatter',
+                                mode: 'lines+markers',
+                                marker: {color: 'red'},
+                            },
+                            {type: 'bar', x: [1, 2, 3], y: [2, 5, 3]},
+                            ]}
+                            layout={{width: 320, height: 240, title: 'A Fancy Plot'}}
+                        /> */}
+
+                    
+
                     {sessionListing.length == 0 ?
                         <p className="message-box info"><LogUIDevice /> has not yet recorded any sessions for this flight.</p>
 
                         :
                         
+
                         <div className="table session analytics" style={{'--totalEvents': this.state.eventCounts[this.state.eventCounts.length - 1].length, '--totalStatistics': this.state.statistics[this.state.statistics.length - 1].length}}>
                             <div className="row header">
                                 <span className="centre">Group</span>
                                 <span className="centre"><strong>SessionID</strong></span>
                                 {statisticNames}
                                 {eventNames}
-                                {/* <span></span>
-                                <span></span>
-                                <span></span>
-                                <span></span> */}
                             </div>
 
                             {Object.keys(sessionListing).map(function(key) {
