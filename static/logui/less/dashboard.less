@@ -11,7 +11,22 @@ main section div.table.session.analytics div.row {
     display: grid;
 }
 
+main section div.table.aggregated div.row {
+    grid-template-columns: 
+        repeat(var(--totalStatistics), 200px)
+        repeat(var(--totalEvents), 200px);
+        // 1fr 1fr 1fr 1fr 1fr;
+    
+    display: grid;
+}
+
 main section div.table.session.analytics{
+
+    overflow: auto;
+    white-space: nowrap;
+}
+
+main section div.table.aggregated{
 
     overflow: auto;
     white-space: nowrap;
@@ -29,4 +44,13 @@ main section div.table div.row span.double span.title.analytics {
     font-size: 80%;
     height: 13pt;
     line-height: auto;
+}
+
+main section div.dropdown {
+    position: absolute;
+    z-index: 1;
+}
+
+main section plot {
+    position: absolute;
 }

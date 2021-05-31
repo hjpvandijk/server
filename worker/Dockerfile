@@ -26,7 +26,7 @@ RUN apk add --update --no-cache \
 RUN mkdir -p /logui/worker/
 WORKDIR /logui/worker
 
-RUN npm install -g @babel/core @babel/cli browserify less uglify-js
+RUN npm install -g @babel/core @babel/cli browserify less uglify-js minify
 
 COPY ./requirements/requirements.txt /logui/worker/requirements.txt
 RUN pip install -r /logui/worker/requirements.txt --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host=files.pythonhosted.org

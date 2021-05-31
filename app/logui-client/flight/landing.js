@@ -3,7 +3,7 @@ import Menu from '../applications/menu';
 import TrailItem from '../nav/trail/trailItem';
 import Constants from '../constants';
 import {Link, Redirect} from 'react-router-dom';
-import JSZip from 'jszip' 
+import JSZip from 'jszip' ;
 import { saveAs } from 'file-saver';
 
 class ViewFlightsPage extends React.Component {

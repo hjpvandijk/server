@@ -15,7 +15,8 @@ def session_duration(session): #problem is session can have multiple start/stop 
         duration = int(stoptime - starttime)
     else:
         stoptime = session.tail(1)["timestamps.sinceSessionStartMillis"].iloc[0]
-        duration = str(stoptime - starttime) + "*"
+        # duration = str(stoptime - starttime) + "*"
+        duration = int(stoptime - starttime)
     # entries[id]["sessionDuration"] = duration
     entry = duration
     return entry
