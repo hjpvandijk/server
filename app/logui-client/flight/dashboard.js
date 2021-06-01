@@ -28,7 +28,8 @@ class FlightDashboard extends React.Component {
             valuesPerStatistic: null,
             visual: 'Box Plots',
             groupPerSession: {},
-            visualGroup: 'All'
+            visualGroup: 'All',
+            filters: {}
         };
 
         this.toggleFlightStatus = this.toggleFlightStatus.bind(this);
@@ -180,7 +181,6 @@ class FlightDashboard extends React.Component {
         const result = {};
         result["events"] = this.aggregateValuesParam(this.state.eventCounts, this.state.events);
         result["statistics"] = this.aggregateValuesParam(this.state.statistics[0], this.state.statistics[1]);
-        console.log(result);
         return result;
 
     };
@@ -281,6 +281,17 @@ class FlightDashboard extends React.Component {
     }
 
 
+    updateFilters(checked, label){
+        if(checked){
+            delete(this.state.filters[label]);
+        }
+        else {
+            this.state.filters[label] = true;
+        }
+        this.forceUpdate();
+    }
+
+
     render() {
         let sessionListing = this.state.sessionListing;
         let authToken = this.props.clientMethods.getLoginDetails().token;
@@ -306,24 +317,29 @@ class FlightDashboard extends React.Component {
         let visual = this.state.visual;
         let visualGroup = this.state.visualGroup;
         const setGroup = this.setGroup.bind(this);    
+        let filters = this.state.filters;
 
         
         const statisticNames = [];
         this.state.statistics[this.state.statistics.length - 1].forEach(element => {
-            var el = <span className="double centre" >
-                <span key={element+"_title"} className="title analytics">{element}</span>
-                <span key={element+"_subtitle"} className="subtitle">statistic</span>
-            </span>
-            statisticNames.push(el)
+            if(this.state.filters[element] == undefined){
+                var el = <span className="double centre" >
+                    <span key={element+"_title"} className="title analytics">{element}</span>
+                    <span key={element+"_subtitle"} className="subtitle">statistic</span>
+                </span>
+                statisticNames.push(el)
+            }
         });
 
         const eventNames = [];
         this.state.events.forEach(element => {
-            var el = <span className="double centre" >
-                <span key={element+"_title"} className="title analytics">{element}</span>
-                <span key={element+"_subtitle"} className="subtitle">event</span>
-            </span>
-            eventNames.push(el)
+            if(this.state.filters[element] == undefined){
+                var el = <span className="double centre" >
+                    <span key={element+"_title"} className="title analytics">{element}</span>
+                    <span key={element+"_subtitle"} className="subtitle">event</span>
+                </span>
+                eventNames.push(el)
+            }
         });
 
         let transforms = visualGroup == "All" ? [] : 
@@ -440,6 +456,26 @@ class FlightDashboard extends React.Component {
             groupselect.push(groupOption);
         });
 
+        const filterEntries = [];
+        statistics[1].forEach(stat => {
+                filterEntries.push(
+                    <div>
+                        <input type="checkbox" className="checkbox" id={"checkbox_" + stat} name={"checkbox_" + stat}  defaultChecked onChange={(e) => this.updateFilters(e.target.checked, stat)}/>
+                        <label htmlFor={"checkbox_" + stat}>{stat}</label>
+                    </div>
+                        
+                );
+        });
+        events.forEach(event => {
+                filterEntries.push(
+                    <div>
+                        <input type="checkbox" className="checkbox" id={"checkbox_" + event} name={"checkbox_" + event}  defaultChecked onChange={(e) => this.updateFilters(e.target.checked, event)}/>
+                        <label htmlFor={"checkbox_" + event}>{event}</label>
+                    </div>
+                        
+                );
+        });
+
 
 
         
@@ -450,19 +486,24 @@ class FlightDashboard extends React.Component {
         
 
         statistics[1].forEach(stat => {
-            aggEntries.push(
-                <span className="centre">
-                    <span key={"agg" + stat} className="title mono"> {aggregated["statistics"][stat]} </span>
-                </span>
-                );
+            if(this.state.filters[stat] == undefined){
+
+                aggEntries.push(
+                    <span className="centre">
+                        <span key={"agg" + stat} className="title mono"> {aggregated["statistics"][stat]} </span>
+                    </span>
+                    );
+            }
         });
 
         events.forEach(event => {
-            aggEntries.push(
-                <span className="centre">
-                    <span key={"agg" + event} className="title mono"> {aggregated["events"][event]} </span>
-                </span>
-                );
+            if(this.state.filters[event] == undefined){
+                aggEntries.push(
+                    <span className="centre">
+                        <span key={"agg" + event} className="title mono"> {aggregated["events"][event]} </span>
+                    </span>
+                    );
+            }
         });
 
         return (
@@ -511,7 +552,10 @@ class FlightDashboard extends React.Component {
                             layout={ {width: 1000, height: 500, title: 'Plot'}}
                         />
 
-                    
+                    <div className="filters">
+                        <div>Filters</div>
+                        {filterEntries}
+                    </div>
 
                     {sessionListing.length == 0 ?
                         <p className="message-box info"><LogUIDevice /> has not yet recorded any sessions for this flight.</p>
@@ -540,7 +584,9 @@ class FlightDashboard extends React.Component {
                                     splitTimestamps={sessionListing[key].split_timestamps}
                                     agentDetails={sessionListing[key].agent_details}
                                     authToken={authToken}
-                                    setGroup = {setGroup} />
+                                    setGroup = {setGroup} 
+                                    filters = {filters}
+                                    />
                                 );
                             })}
                         </div>
@@ -563,21 +609,27 @@ class SessionListItem extends React.Component {
 
         const valuePerStatistic = []
         this.props.statisticNames.forEach(statistic => {
-            var value = (this.props.statisticValues == undefined) ? 0 : (this.props.statisticValues[statistic] == undefined ? 0 : this.props.statisticValues[statistic]);
-            valuePerStatistic.push(
-                <span className="centre">
-                    <span key={this.props.id + statistic} className="title mono"> {value} </span>
-                </span>
-            );
+            if(this.props.filters[statistic] == undefined){
+
+                var value = (this.props.statisticValues == undefined) ? 0 : (this.props.statisticValues[statistic] == undefined ? 0 : this.props.statisticValues[statistic]);
+                valuePerStatistic.push(
+                    <span className="centre">
+                        <span key={this.props.id + statistic} className="title mono"> {value} </span>
+                    </span>
+                );
+            }
         });
 
         const countPerEvent = []
         this.props.events.forEach(event => {
-            countPerEvent.push(
-                <span className="centre">
-                    <span key={this.props.id + event} className="title mono"> {(this.props.eventCounts == undefined) ? 0 : (this.props.eventCounts[event] == undefined ? 0 : this.props.eventCounts[event])} </span>
-                </span>
-            );
+            if(this.props.filters[event] == undefined){
+
+                countPerEvent.push(
+                    <span className="centre">
+                        <span key={this.props.id + event} className="title mono"> {(this.props.eventCounts == undefined) ? 0 : (this.props.eventCounts[event] == undefined ? 0 : this.props.eventCounts[event])} </span>
+                    </span>
+                );
+            }
         });
         
 
