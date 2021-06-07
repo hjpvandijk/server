@@ -224,6 +224,60 @@ class FlightLogDataDownloaderView(APIView):
         mongo_connection.close()
         return response
 
+class FlightLogDataOneSessionView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, flightID, sessionID):
+
+        try:
+            flight = Flight.objects.get(id=flightID)
+        except Flight.DoesNotExist:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+        mongo_db_handle, mongo_connection = get_mongo_connection_handle()
+
+        # Do we have a collection for the flight in the MongoDB instance?
+        # If not, this means the flight has been created, but no data yet exists for it.
+        if not str(flight.id) in mongo_db_handle.list_collection_names():
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+        
+        # If we get here, then there is a collection -- and we can get the data for it.
+        mongo_collection_handle = get_mongo_collection_handle(mongo_db_handle, str(flight.id))
+
+        try:
+            print(str(sessionID))
+            # Get all of the data.
+            # This also omits the _id field that is added by MongoDB -- we don't need it.
+            log_entries = mongo_collection_handle.find({'sessionID': str(sessionID)}, {'_id': False})
+            stream = io.StringIO()
+
+            stream.write(f'[{os.linesep}{os.linesep}')
+            
+            # Get the count and if it matches the length...
+            no_entries = log_entries.count()
+            counter = 0
+
+            for entry in log_entries:
+                if counter == (no_entries - 1):
+                    stream.write(f'{json.dumps(entry)}{os.linesep}{os.linesep}')
+                    continue
+                
+                stream.write(f'{json.dumps(entry)},{os.linesep}{os.linesep}')
+                counter += 1
+            
+            stream.write(f']')
+            stream.seek(0)
+        except:
+            print(sys.exc_info()[0])
+            print(traceback.format_exc())
+            return    
+        
+        response = StreamingHttpResponse(stream, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
+        
+        mongo_connection.close()
+        return response
+
 class FlightScreenCapturesDownloaderView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -254,11 +308,6 @@ class FlightScreenCapturesDownloaderView(APIView):
         counter = 0
         try:
             for entry in log_entries:
-                print("id:", entry._id)
-                # dict_str = entry.read().decode("UTF-8")
-                # mydata = ast.literal_eval(dict_str)
-                # print(dict_str)
-                # print(mydata)
                 encoded = base64.b64encode(entry.read())
                 data = {}
                 data['bytes'] = encoded.decode('ascii')

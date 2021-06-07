@@ -15,6 +15,7 @@ import FlightDashboard from './flight/dashboard'
 import FlightAddPage from './flight/add';
 
 import ViewSessionPage from './session/landing';
+import SessionDashboard from './session/dashboard';
 
 import SettingsLandingPage from './settings/landing';
 
@@ -260,9 +261,18 @@ class LogUIClientApp extends React.Component {
 
                     <Route
                         path="/flight/:id/dashboard"
+                        exact
                         replace
                         render={
                             (props) => (<FlightDashboard {...props} clientMethods={this.methodReferences} isLoggedIn={this.state.isLoggedIn} />)}
+                    />
+                    
+                    <Route
+                        path="/flight/:id/dashboard/:sessionid"
+                        exact
+                        replace
+                        render={
+                            (props) => (<SessionDashboard {...props} clientMethods={this.methodReferences} isLoggedIn={this.state.isLoggedIn} />)}
                     />
 
                     <Route
@@ -278,6 +288,8 @@ class LogUIClientApp extends React.Component {
                         render={
                             (props) => (<ViewSessionPage {...props} clientMethods={this.methodReferences} isLoggedIn={this.state.isLoggedIn} />)}
                     />
+
+                    
 
                     <Route
                         path="/settings"
