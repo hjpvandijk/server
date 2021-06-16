@@ -1,7 +1,8 @@
 @import 'global.less';
 
 main section div.table.session.analytics div.row {
-    grid-template-columns: 
+    grid-template-columns:
+        25px 
         80px
         250px 
         repeat(var(--totalStatistics), 200px)
@@ -13,6 +14,7 @@ main section div.table.session.analytics div.row {
 
 main section div.table.aggregated div.row {
     grid-template-columns: 
+        25px
         repeat(var(--totalStatistics), 200px)
         repeat(var(--totalEvents), 200px);
         // 1fr 1fr 1fr 1fr 1fr;
@@ -22,6 +24,8 @@ main section div.table.aggregated div.row {
 
 
 main section div.table.logs {
+    height: 300px;
+    clear:both;
     overflow: auto;
     white-space: nowrap;
 }   
@@ -32,9 +36,10 @@ main section div.videoDiv {
 }
 
 main section div.table.session.analytics{
-
+    clear: both;
     overflow: auto;
     white-space: nowrap;
+    margin-top: 50px;
 }
 
 main section div.table.aggregated{
@@ -58,9 +63,10 @@ main section div.table div.row span.double span.title.analytics {
 }
 
 main section div.dropdown {
-    // position: absolute;
+    position: absolute;
     z-index: 1;
-    float: left;
+    // float: left;
+    left: 0;
     // display: inline-block;
 }
 
@@ -68,8 +74,8 @@ main section div.dropdown {
     
 // }
 
-main section plot {
-    // position: absolute;
+main section div.plotDiv {
+    position: relative;
     float: left;
     // display: inline-block;
 }
@@ -77,5 +83,25 @@ main section plot {
 main section div.filters {
     // position:absolute;
     float: right;
-    right: 200px;
+    right: 250px;
+    height: 600px;
+    overflow: auto;
+    white-space: nowrap;
+}
+
+main section span.download {
+    // width: 25px;
+    // height: 25px;
+    // z-index: 1;
+    // float: right;
+    display: inline-block;
+}
+
+main section span.download a {
+    display: block;
+    width: 25px;
+    height: 25px;
+    line-height: 0; 
+    font-size: 0;
+    color: transparent; 
 }

@@ -439,7 +439,6 @@ class FlightLogInteractionEventTimelineView(APIView):
         # no_entries = log_entries.count()
         log_entries_list = list(log_entries)
         # print(log_entries_list)
-        print("got entries")
         entries = {}
         try:
             # log_entries_json = json.loads(log_entries_list)
@@ -503,7 +502,6 @@ class FlightLogStatisticsView(APIView):
         # no_entries = log_entries.count()
         log_entries_list = list(log_entries)
         # print(log_entries_list)
-        print("got entries")
         entries = {}
         try:
             # log_entries_json = json.loads(log_entries_list)
@@ -521,12 +519,12 @@ class FlightLogStatisticsView(APIView):
                     if isinstance(entry, dict) and "average" in entry.keys() and "total" in entry.keys():   #To do: make adaptive for all keys in dict
                         entries[id][func.__name__ + "_total"] = entry["total"]
                         entries[id][func.__name__ + "_average"] = entry["average"]
-                        if i==0:
+                        if func.__name__ + "_total" not in all_values:
                             all_values.append(func.__name__ +  "_total")
                             all_values.append(func.__name__ +  "_average")
                     else:
                         entries[id][func.__name__] = entry
-                        if i==0:
+                        if func.__name__ not in all_values:
                             all_values.append(func.__name__)
             stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
             stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')

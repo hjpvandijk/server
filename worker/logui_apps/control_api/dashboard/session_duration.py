@@ -6,7 +6,7 @@ def session_duration(session): #problem is session can have multiple start/stop 
     started = statusEvents[ statusEvents['eventDetails.type'] == 'started']
     # print(started["timestamps.sinceSessionStartMillis"].head(1).iloc[0])
     stopped = statusEvents[ statusEvents['eventDetails.type'] == 'stopped']
-    starttime = started["timestamps.sinceSessionStartMillis"].tail(1).iloc[0]
+    starttime = started["timestamps.sinceSessionStartMillis"].head(1).iloc[0]
     stoptime = 0
     duration = 0
     if stopped["timestamps.sinceSessionStartMillis"].tail(1).size > 0:

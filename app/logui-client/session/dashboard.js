@@ -151,6 +151,8 @@ class SessionDashboard extends React.Component {
                     eventCounts: jsonObj[0][this.props.match.params.sessionid],
                     events: jsonObj[1]
                 });
+                console.log("eventCounts: ");
+                console.log(jsonObj);
             });
     };
 
@@ -184,88 +186,106 @@ class SessionDashboard extends React.Component {
                 this.setState({
                     statistics: stats,
                 });
-                console.log(stats);
+                console.log("stats: ");
+                console.log(jsonObj);
             });
     };
 
-    aggregateValues(){
-        const result = {};
-        result["events"] = this.aggregateValuesParam(this.state.eventCounts, this.state.events);
-        result["statistics"] = this.aggregateValuesParam(this.state.statistics[0], this.state.statistics[1]);
-        return result;
-
-    };
-
-
-    aggregateValuesParam(dataPerSession, valueNames){
-        const result = {};
-        valueNames.forEach(valueName => {
-            let total = 0;
-            let totalAdds = 0;
-            Object.values(this.state.sessionListing).forEach(session => {
-                if (this.state.visualGroup == "All" || this.state.groupPerSession[session.id] == this.state.visualGroup){
-                    if(dataPerSession[session.id] != undefined){
-                        const val = dataPerSession[session.id][valueName];
-                        if (typeof val ==  'number'){
-                            total += val;
-                        }
-                    }
-                    totalAdds++;
-                }
-            })
-            result[valueName] = total/totalAdds;
-        });
-        return result;
-    };
-
-    // getBoxPlotArraysStatistics(){
-    //     const dataPerSession = this.state.statistics[0];
-    //     const valueNames = this.state.statistics[1];
-    //     const result = {};
-    //     valueNames.forEach(valueName => {
-    //         result[valueName] = {};
-    //         result[valueName]["values"] = [];
-    //         result[valueName]["sessionIDs"] = [];
-    //         Object.values(this.state.sessionListing).forEach(session => {
-    //             if(dataPerSession[session.id] != undefined){
-    //                 const val = dataPerSession[session.id][valueName];
-    //                 if (val == undefined){
-    //                     result[valueName]["values"].push(0);
-    //                 } else if (typeof val ==  'number'){
-    //                     result[valueName]["values"].push(val);
-    //                 }
-    //                 result[valueName]["sessionIDs"].push(session.id);
-    //             }
-    //         })
+    // downloadStatisticsCSV(){
+    //     let rows = [];
+    //     const statisticNames = [];
+    //     this.state.statistics[this.state.statistics.length - 1].forEach(element => {
+    //         if(this.state.filters[element] == undefined){
+    //             statisticNames.push(element);
+    //         }
     //     });
-    //     this.setState({
-    //         valuesPerStatistic: result,
+
+    //     const eventNames = [];
+    //     this.state.events.forEach(element => {
+    //         if(this.state.filters[element] == undefined){
+    //             eventNames.push(element);
+    //         }
     //     });
+    //     rows.push(["sessionID"].concat(statisticNames).concat(eventNames));
+
+        
+    //     let row = [];
+
+    //     const valuePerStatistic = []
+    //     const statisticValues = this.state.statistics[0][session.id];
+    //     statisticNames.forEach(statistic => {
+    //         if(this.state.filters[statistic] == undefined){
+
+    //             var value = (statisticValues == undefined) ? 0 : ([statistic] == undefined ? 0 : statisticValues[statistic]);
+    //             valuePerStatistic.push(
+    //                 value
+    //             );
+    //         }
+    //     });
+
+    //     const countPerEvent = [];
+    //     const eventCounts = this.state.eventCounts[session.id]
+    //     eventNames.forEach(event => {
+    //         if(this.state.filters[event] == undefined){
+
+    //             countPerEvent.push(
+    //                 (eventCounts == undefined) ? 0 : (eventCounts[event] == undefined ? 0 : eventCounts[event])
+    //             );
+    //         }
+    //     });
+
+    //     row.push([session.id].concat(valuePerStatistic).concat(countPerEvent));
+        
+    //     rows.push(row);
+            
+
+        
+
+
+    //     // https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
+    //     let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+
+    //     var encodedUri = encodeURI(csvContent);
+    //     var link = document.createElement("a");
+    //     link.setAttribute("href", encodedUri);
+    //     link.setAttribute("download", this.state.flightInfo.id+".csv");
+    //     document.body.appendChild(link); // Required for FF
+
+    //     link.click(); // This will download the data file named "my_data.csv".
+
+
     // }
 
-    // getBoxPlotArraysEvents(dataPerSession, valueNames){
+
+    // aggregateValues(){
+    //     const result = {};
+    //     result["events"] = this.aggregateValuesParam(this.state.eventCounts, this.state.events);
+    //     result["statistics"] = this.aggregateValuesParam(this.state.statistics[0], this.state.statistics[1]);
+    //     return result;
+
+    // };
+
+
+    // aggregateValuesParam(dataPerSession, valueNames){
     //     const result = {};
     //     valueNames.forEach(valueName => {
-    //         result[valueName] = {};
-    //         result[valueName]["values"] = [];
-    //         result[valueName]["sessionIDs"] = [];
+    //         let total = 0;
+    //         let totalAdds = 0;
     //         Object.values(this.state.sessionListing).forEach(session => {
-    //             if(dataPerSession[session.id] != undefined){
-    //                 const val = dataPerSession[session.id][valueName];
-    //                 if (val == undefined){
-    //                     result[valueName]["values"].push(0);
-    //                 } else if (typeof val ==  'number'){
-    //                     result[valueName]["values"].push(val);
+    //             if (this.state.visualGroup == "All" || this.state.groupPerSession[session.id] == this.state.visualGroup){
+    //                 if(dataPerSession[session.id] != undefined){
+    //                     const val = dataPerSession[session.id][valueName];
+    //                     if (typeof val ==  'number'){
+    //                         total += val;
+    //                     }
     //                 }
-    //                 result[valueName]["sessionIDs"].push(session.id);
+    //                 totalAdds++;
     //             }
     //         })
+    //         result[valueName] = total/totalAdds;
     //     });
-    //     this.setState({
-    //         valuesPerEvent: result,
-    //     });
-
-    // }
+    //     return result;
+    // };
 
     setGroup = (sessionID, group) => {
         if(group == ""){
@@ -315,6 +335,7 @@ class SessionDashboard extends React.Component {
                     alert('There is no log data available to download for this flight at present.');
                     return;
                 }
+                console.log("sc: ");
                 console.log(jsonObj);
                 
                 for(var i=0; i<jsonObj.length; i++){
@@ -357,6 +378,7 @@ class SessionDashboard extends React.Component {
                 this.setState({
                     logs: jsonObj
                 });
+                console.log("logs: ");
                 console.log(jsonObj);
             });
     };
@@ -474,12 +496,78 @@ class SessionDashboard extends React.Component {
 
         const boxPlots = [];
 
-        let plots = boxPlots;
-        if(visual == "Box Plots"){
-            plots = boxPlots;
-        } else if(visual == "Time Series Plots"){
-            plots = timeSeriesPlots;
-        }
+        const eventTimelines = [];
+        events.forEach(event => {
+            const y = [];
+            eventTimeline[event]["timestamps"].forEach(e => {
+                y.push(0.5);
+            });
+
+            const groups = [];
+            eventTimeline[event]["sessionIDs"].forEach(sessionID => {
+                if(this.state.groupPerSession[sessionID] == undefined){
+                    groups.push("");
+                } else{
+                    groups.push(this.state.groupPerSession[sessionID]);
+                }
+            });
+
+            var entry = {
+                x: eventTimeline[event]["timestamps"],
+                y: y,
+                hovertext: eventTimeline[event]["sessionIDs"],
+                customdata: groups,
+                name: event,
+                type: 'scatter',
+                mode: 'markers',
+                marker: {
+                    // color: 'rgba(17, 157, 255,0.5)',
+                    opacity: 0.5,
+                    symbol: 'line-ns-open',
+                    size: 100,
+                    line: {
+                        // color: 'rgba(17, 157, 255,0.5)',
+                        width: 10
+                    },
+                },
+                hoverinfo: "x",
+                transforms: transforms
+            };
+            eventTimelines.push(entry);
+        });
+
+        let boxTimeseriesLayout = {
+            width: 900, height: 600
+        };
+
+        let eventTimelineLayout = {
+            width: 900, height: 600, 
+            yaxis: {
+                range: [0, 1],
+                showgrid: false,
+                showline: false,
+                showticklabels: false,
+                zeroline: false,
+              },
+            xaxis: {
+                showgrid: false,
+                showline: false,
+            },
+            };
+
+
+            let plots = boxPlots;
+            let layout = boxTimeseriesLayout;
+            if(visual == "Box Plots"){
+                plots = boxPlots;
+                layout = boxTimeseriesLayout;
+            } else if(visual == "Time Series Plots"){
+                plots = timeSeriesPlots;
+                layout = boxTimeseriesLayout;
+            } else if(visual == "Event Timeline"){
+                plots = eventTimelines;
+                layout = eventTimelineLayout;
+            }
 
         // const groupselect = [];
         // this.getAllGroups().forEach(group =>{
@@ -561,7 +649,7 @@ class SessionDashboard extends React.Component {
         });
 
         const videoElem = (screencapture != null) ? 
-        <video width="800" height="400" id="screencapture" autoPlay controls muted onTimeUpdate={(event) => (loopvideo(event))}>
+        <video width="100%" height="100%" id="screencapture" autoPlay controls muted onTimeUpdate={(event) => (loopvideo(event))}>
             <source src={screencapture} type="video/webm"></source>
         </video> 
         : "No screen capture was recorded for this session";
@@ -581,10 +669,16 @@ class SessionDashboard extends React.Component {
 
                     <div className="table aggregated" style={{'--totalEvents': events.length, '--totalStatistics': statistics[1].length}}>
                             <div className="row header">
+                                <div className="centre">
+                                    <div></div>
+                                </div>
                                 {statisticNames}
                                 {eventNames}
                             </div>
                             <div className="row double-height">
+                                <div className="centre">
+                                    <div></div>
+                                </div>
                                 {valueEntries}
                             </div>
                     </div>
@@ -594,24 +688,25 @@ class SessionDashboard extends React.Component {
                         {filterEntries}
                     </div> */}
 
-                    <div className="videoDiv" width="50%" height="25%">  
+                    <div className="videoDiv" width="500px" height="500px">  
                         {videoElem}
                     </div> 
                     
-                    <div className="grupDropdown">
-                        <select name="" onChange={(event) => (this.setState({visual: event.target.value}))}>
-                            <option id="timeSeriesPlots" value="Time Series Plots">Time Series Plots</option>
-                        </select>
+                    
 
-
-                    </div>
-
-                    <div>
+                    <div className="plotDiv" style={{width: '900px', height: '600px'}}>
+                        <div className="grupDropdown">
+                            <select name="" onChange={(event) => (this.setState({visual: event.target.value}))}>
+                                <option id="timeSeriesPlots" value="Time Series Plots">Time Series Plots</option>
+                                <option id="eventTimeline" value="Event Timeline">Event Timeline</option>
+                            </select>
+                        </div>
                         <Plot
                                 data={
                                 plots
                                 }
-                                layout={ {width: "50%", height: "25%"}}
+                                layout={ layout}
+                                config={{responsive: true}}
                             />
                     </div>
                     

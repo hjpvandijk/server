@@ -144,6 +144,7 @@ class FlightDashboard extends React.Component {
                     eventCounts: jsonObj[0],
                     events: jsonObj[1]
                 });
+                console.log(jsonObj);
             });
     };
 
@@ -174,8 +175,133 @@ class FlightDashboard extends React.Component {
                 this.setState({
                     statistics: jsonObj,
                 });
+                console.log(jsonObj);
             });
     };
+
+
+    downloadStatisticsCSV(){
+        let rows = [];
+        const statisticNames = [];
+        this.state.statistics[this.state.statistics.length - 1].forEach(element => {
+            if(this.state.filters[element] == undefined){
+                statisticNames.push(element);
+            }
+        });
+
+        const eventNames = [];
+        this.state.events.forEach(element => {
+            if(this.state.filters[element] == undefined){
+                eventNames.push(element);
+            }
+        });
+        rows.push(["sessionID"].concat(statisticNames).concat(eventNames));
+
+        Object.values(this.state.sessionListing).forEach(session => {
+            let row = [];
+
+            const valuePerStatistic = []
+            const statisticValues = this.state.statistics[0][session.id];
+            statisticNames.forEach(statistic => {
+                if(this.state.filters[statistic] == undefined){
+
+                    var value = (statisticValues == undefined) ? 0 : ([statistic] == undefined ? 0 : statisticValues[statistic]);
+                    valuePerStatistic.push(
+                        value
+                    );
+                }
+            });
+
+            const countPerEvent = [];
+            const eventCounts = this.state.eventCounts[session.id]
+            eventNames.forEach(event => {
+                if(this.state.filters[event] == undefined){
+
+                    countPerEvent.push(
+                        (eventCounts == undefined) ? 0 : (eventCounts[event] == undefined ? 0 : eventCounts[event])
+                    );
+                }
+            });
+
+            row.push([session.id].concat(valuePerStatistic).concat(countPerEvent));
+            
+            rows.push(row);
+            
+        });
+
+        
+
+
+        // https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
+        let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", this.state.flightInfo.id+".csv");
+        document.body.appendChild(link); // Required for FF
+
+        link.click(); // This will download the data file named "my_data.csv".
+
+
+    }
+
+    downloadAggregatedCSV(){
+        let rows = [];
+        const statisticNames = [];
+        this.state.statistics[this.state.statistics.length - 1].forEach(element => {
+            if(this.state.filters[element] == undefined){
+                statisticNames.push(element);
+            }
+        });
+
+        const eventNames = [];
+        this.state.events.forEach(element => {
+            if(this.state.filters[element] == undefined){
+                eventNames.push(element);
+            }
+        });
+        rows.push(statisticNames.concat(eventNames));
+
+        let aggregated = this.aggregateValues();
+        
+        const valuePerStatistic = []
+        statisticNames.forEach(statistic => {
+            if(this.state.filters[statistic] == undefined){
+
+                valuePerStatistic.push(
+                    aggregated["statistics"][statistic]
+                );
+            }
+        });
+
+        const countPerEvent = [];
+        eventNames.forEach(event => {
+            if(this.state.filters[event] == undefined){
+
+                countPerEvent.push(
+                    aggregated["events"][event]
+                );
+            }
+        });
+        let row = [];
+        row.push(valuePerStatistic.concat(countPerEvent));
+        
+        rows.push(row);
+
+        // https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
+        let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", this.state.flightInfo.id+"_aggregated.csv");
+        document.body.appendChild(link); // Required for FF
+
+        link.click(); // This will download the data file named "my_data.csv".
+
+
+    }
 
     aggregateValues(){
         const result = {};
@@ -444,11 +570,85 @@ class FlightDashboard extends React.Component {
             boxPlots.push(entry);
         });
 
+        const eventTimelines = [];
+        events.forEach(event => {
+            const y = [];
+            eventTimeline[event]["timestamps"].forEach(e => {
+                y.push(0.5);
+            });
+
+            const groups = [];
+            eventTimeline[event]["sessionIDs"].forEach(sessionID => {
+                if(this.state.groupPerSession[sessionID] == undefined){
+                    groups.push("");
+                } else{
+                    groups.push(this.state.groupPerSession[sessionID]);
+                }
+            });
+
+            var entry = {
+                x: eventTimeline[event]["timestamps"],
+                y: y,
+                hovertext: eventTimeline[event]["sessionIDs"],
+                customdata: groups,
+                name: event,
+                type: 'scatter',
+                mode: 'markers',
+                marker: {
+                    // color: 'rgba(17, 157, 255,0.5)',
+                    opacity: 0.5,
+                    symbol: 'line-ns-open',
+                    size: 100,
+                    line: {
+                        // color: 'rgba(17, 157, 255,0.5)',
+                        width: 10   
+                    },
+                hoverinfo: "x",
+                },
+                transforms: transforms
+            };
+            eventTimelines.push(entry);
+        });
+
+        let boxTimeseriesLayout = {
+            width: 900, height: 600, 
+            yaxis: {
+                automargin: true,
+            },
+            xaxis: {
+                automargin: true,
+            }};
+
+        let eventTimelinelayout = {
+            width: 900, height: 600, 
+            yaxis: {
+                range: [0, 1],
+                showgrid: false,
+                showline: false,
+                showticklabels: false,
+                zeroline: false,
+                automargin: true
+              },
+            xaxis: {
+                showgrid: false,
+                showline: false,
+                automargin: true
+            },
+            };
+
+
+
         let plots = boxPlots;
+        let layout = boxTimeseriesLayout;
         if(visual == "Box Plots"){
             plots = boxPlots;
+            layout = boxTimeseriesLayout;
         } else if(visual == "Time Series Plots"){
             plots = timeSeriesPlots;
+            layout = boxTimeseriesLayout;
+        } else if(visual == "Event Timeline"){
+            plots = eventTimelines;
+            layout = eventTimelinelayout;
         }
 
         const groupselect = [];
@@ -530,36 +730,48 @@ class FlightDashboard extends React.Component {
                             </select>
                     </div>
 
+
+
+
                     <div className="table aggregated" style={{'--totalEvents': events.length, '--totalStatistics': statistics[1].length}}>
                             <div className="row header">
+                                <span className="icon" > <Link to="" className="icon-container icon-download dark hover" onClick={() => this.downloadAggregatedCSV()}>Download Aggregated Values</Link></span>
+
                                 {statisticNames}
                                 {eventNames}
                             </div>
                             <div className="row double-height">
+                                <span className ="centre">
+                                    <span></span>
+                                </span>
                                 {aggEntries}
                             </div>
                     </div>
 
+
                     
-                    <div className="dropdown">
-                        <select name="" onChange={(event) => (this.setState({visual: event.target.value}))}>
-                            <option id="boxPlots" value="Box Plots">Box Plot</option>
-                            <option id="timeSeriesPlots" value="Time Series Plots">Time Series Plots</option>
-                        </select>
+
+                    <div className="plotDiv" style={{width: '900px', height: '600px'}}>
+                        <div className="dropdown">
+                            <select name="" onChange={(event) => (this.setState({visual: event.target.value}))}>
+                                <option id="boxPlots" value="Box Plots">Box Plot</option>
+                                <option id="timeSeriesPlots" value="Time Series Plots">Time Series Plots</option>
+                                <option id="eventTimelines" value="Event Timeline">Event Timeline</option>
+                            </select>
+                        </div>
+                        <Plot
+                                data={
+                                plots
+                                }
+                                layout={ layout}
+                                // config={{responsive: true}}
+                            />
                     </div>
-
-
-                    <Plot
-                            data={
-                            plots
-                            }
-                            layout={ {width: 1000, height: 500}}
-                        />
-
                     <div className="filters">
                         <div>Filters</div>
                         {filterEntries}
                     </div>
+
 
                     {sessionListing.length == 0 ?
                         <p className="message-box info"><LogUIDevice /> has not yet recorded any sessions for this flight.</p>
@@ -567,8 +779,10 @@ class FlightDashboard extends React.Component {
                         :
                         
 
-                        <div className="table session analytics" style={{'--totalEvents': events.length, '--totalStatistics': this.state.statistics[this.state.statistics.length - 1].length}}>
-                            <div className="row header">
+                        <div className="table session analytics" style={{'--totalEvents': events.length, '--totalStatistics': this.state.statistics[this.state.statistics.length - 1].length, height: "300px"}}>
+                            <div className="row header"> 
+                                <span className="icon" > <Link to="" className="icon-container icon-download dark hover" onClick={() => this.downloadStatisticsCSV()}>Download Statistics</Link></span>
+
                                 <span className="centre">Group</span>
                                 <span className="centre"><strong>SessionID</strong></span>
                                 {statisticNames}
@@ -594,8 +808,12 @@ class FlightDashboard extends React.Component {
                                     />
                                 );
                             })}
+
                         </div>
+                        
                     }
+
+
                 </section>
             </main>
         );
@@ -640,6 +858,9 @@ class SessionListItem extends React.Component {
 
         return (
             <div className="row double-height">
+                <span className ="centre">
+                    <span></span>
+                </span>
                 <span className="centre">
                     <input className="title mono" type="text" style={{width: "60px"}} onChange={event => this.props.setGroup(this.props.id, event.target.value)}/>
                     {/* <span className="title mono">1</span> */}

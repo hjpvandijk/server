@@ -2,7 +2,7 @@ def time_between_queries(session):
     # entries = {}
    
     submits = session[ session['eventDetails.type'] == 'submit']
-    submits =  submits[submits["eventDetails.name"] == 'QUERY_SUBMITTED']
+    # submits =  submits[submits["eventDetails.name"] == 'QUERY_SUBMITTED']
     outcome = 0
     for i in range(submits.shape[0] - 1):
         query1 = submits["timestamps.sinceSessionStartMillis"].iloc[i]
