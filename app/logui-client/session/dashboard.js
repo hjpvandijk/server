@@ -168,6 +168,8 @@ class SessionDashboard extends React.Component {
                 this.setState({
                     eventTimeline: jsonObj[0],
                 });
+                console.log("Eventtimeline: ");
+                console.log(jsonObj[0]);
             });
     };
 
@@ -431,6 +433,7 @@ class SessionDashboard extends React.Component {
         let screencapture = this.state.screencapture;
         let loopvideo = this.loopvideo;
         let logs = this.state.logs;
+        let thisSession = this.props.match.params.sessionid;
 
         
         const statisticNames = [];
@@ -467,10 +470,19 @@ class SessionDashboard extends React.Component {
         const timeSeriesPlots = [];
         events.forEach(event => {
             const y = [];
-            let ct = 1;
-            eventTimeline[event]["timestamps"].forEach(e => {
-                y.push(ct++);
+            const x = [];
+            const sessions = [];
+            var ct = 1;
+
+            eventTimeline[event]["timestamps"].forEach(function(ts, i){
+                if (eventTimeline[event]["sessionIDs"][i] == thisSession){
+                    x.push(eventTimeline[event]["timestamps"][i]);
+                    y.push(ct++);
+                    sessions.push(thisSession);
+
+                }
             });
+
 
             const groups = [];
             eventTimeline[event]["sessionIDs"].forEach(sessionID => {
@@ -482,14 +494,15 @@ class SessionDashboard extends React.Component {
             });
 
             var entry = {
-                x: eventTimeline[event]["timestamps"],
+                // x: eventTimeline[event]["timestamps"],
+                x: x,
                 y: y,
-                hovertext: eventTimeline[event]["sessionIDs"],
+                hovertext: sessions,
                 customdata: groups,
                 type: 'scatter',
                 name: event,
                 mode: 'lines+markers',
-                transforms: transforms
+                // transforms: transforms
             };
             timeSeriesPlots.push(entry);
         });
@@ -537,11 +550,11 @@ class SessionDashboard extends React.Component {
         });
 
         let boxTimeseriesLayout = {
-            width: 900, height: 600
+            width: 800, height: 500
         };
 
         let eventTimelineLayout = {
-            width: 900, height: 600, 
+            width: 800, height: 500, 
             yaxis: {
                 range: [0, 1],
                 showgrid: false,
@@ -649,7 +662,7 @@ class SessionDashboard extends React.Component {
         });
 
         const videoElem = (screencapture != null) ? 
-        <video width="100%" height="100%" id="screencapture" autoPlay controls muted onTimeUpdate={(event) => (loopvideo(event))}>
+        <video width="450px" height="260px" id="screencapture" autoPlay controls muted onTimeUpdate={(event) => (loopvideo(event))}>
             <source src={screencapture} type="video/webm"></source>
         </video> 
         : "No screen capture was recorded for this session";
@@ -667,7 +680,7 @@ class SessionDashboard extends React.Component {
                    
 
 
-                    <div className="table aggregated" style={{'--totalEvents': events.length, '--totalStatistics': statistics[1].length}}>
+                    <div className="table aggregated" style={{'--totalEvents': events.length, '--totalStatistics': statistics[1].length, zoom: 0.8, MozTransformStyle: "scale(0.8)", MozTransformOrigin: '0 0'}}>
                             <div className="row header">
                                 <div className="centre">
                                     <div></div>
@@ -688,13 +701,13 @@ class SessionDashboard extends React.Component {
                         {filterEntries}
                     </div> */}
 
-                    <div className="videoDiv" width="500px" height="500px">  
+                    <div className="videoDiv" width="450px" height="260px">  
                         {videoElem}
                     </div> 
                     
                     
 
-                    <div className="plotDiv" style={{width: '900px', height: '600px'}}>
+                    <div className="plotDiv" style={{width: '800px', height: '500px'}}>
                         <div className="grupDropdown">
                             <select name="" onChange={(event) => (this.setState({visual: event.target.value}))}>
                                 <option id="timeSeriesPlots" value="Time Series Plots">Time Series Plots</option>
@@ -711,7 +724,7 @@ class SessionDashboard extends React.Component {
                     </div>
                     
                     
-                    <div className="table logs">
+                    <div className="table logs" style={{    zoom: 0.8, MozTransformStyle: "scale(0.8)", MozTransformOrigin: '0 0'}}>
                             <div className="row header">
                                 <span className="centre" >
                                     <span key="logs" className="title">Logs</span>

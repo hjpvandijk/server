@@ -180,7 +180,9 @@ class FlightDashboard extends React.Component {
     };
 
 
-    downloadStatisticsCSV(){
+    downloadStatisticsCSV(e){
+        e.preventDefault();
+
         let rows = [];
         const statisticNames = [];
         this.state.statistics[this.state.statistics.length - 1].forEach(element => {
@@ -243,10 +245,12 @@ class FlightDashboard extends React.Component {
 
         link.click(); // This will download the data file named "my_data.csv".
 
-
+        return false;
     }
 
-    downloadAggregatedCSV(){
+    downloadAggregatedCSV(e){
+        e.preventDefault();
+
         let rows = [];
         const statisticNames = [];
         this.state.statistics[this.state.statistics.length - 1].forEach(element => {
@@ -300,7 +304,7 @@ class FlightDashboard extends React.Component {
 
         link.click(); // This will download the data file named "my_data.csv".
 
-
+        return false;
     }
 
     aggregateValues(){
@@ -445,6 +449,7 @@ class FlightDashboard extends React.Component {
         const setGroup = this.setGroup.bind(this);    
         let filters = this.state.filters;
         let flightInfo = this.state.flightInfo;
+        let groupPerSession = this.state.groupPerSession;
 
         
         const statisticNames = [];
@@ -470,40 +475,55 @@ class FlightDashboard extends React.Component {
         });
 
         let transforms = visualGroup == "All" ? [] : 
-        [{
+        [
+            {
             type: 'filter',
             target: 'customdata',
             operation: '==',
             value: visualGroup
-          }];
+          }
+        ];
 
 
         const timeSeriesPlots = [];
         events.forEach(event => {
-            const y = [];
-            let ct = 1;
-            eventTimeline[event]["timestamps"].forEach(e => {
-                y.push(ct++);
-            });
+            // const y = [];
+            // var ct = 1;
+            // eventTimeline[event]["timestamps"].forEach(e => {
+            //     y.push(ct++);
+            // });
 
-            const groups = [];
-            eventTimeline[event]["sessionIDs"].forEach(sessionID => {
-                if(this.state.groupPerSession[sessionID] == undefined){
-                    groups.push("");
-                } else{
-                    groups.push(this.state.groupPerSession[sessionID]);
+            const y = [];
+            const x = [];
+            const sessions = [];
+            var ct = 0;
+            eventTimeline[event]["timestamps"].forEach(function(ts, i){
+                if (eventTimeline[event]["sessionIDs"][i] !== null && (visualGroup=="All" || groupPerSession[eventTimeline[event]["sessionIDs"][i]] == visualGroup)){
+                    x.push(eventTimeline[event]["timestamps"][i]);
+                    y.push(++ct);
+                    sessions.push(eventTimeline[event]["sessionIDs"][i]);
                 }
             });
 
+            const groups = [];
+            // eventTimeline[event]["sessionIDs"].forEach(sessionID => {
+            //     if(this.state.groupPerSession[sessionID] == undefined){
+            //         groups.push("");
+            //     } else{
+            //         groups.push(this.state.groupPerSession[sessionID]);
+            //     }
+            // });
+
             var entry = {
-                x: eventTimeline[event]["timestamps"],
+                // x: eventTimeline[event]["timestamps"],
+                x: x,
                 y: y,
-                hovertext: eventTimeline[event]["sessionIDs"],
-                customdata: groups,
+                hovertext: sessions,
+                // customdata: groups,
                 type: 'scatter',
                 name: event,
                 mode: 'lines+markers',
-                transforms: transforms
+                // transforms: transforms
             };
             timeSeriesPlots.push(entry);
         });
@@ -611,7 +631,7 @@ class FlightDashboard extends React.Component {
         });
 
         let boxTimeseriesLayout = {
-            width: 900, height: 600, 
+            width: 1000, height: 500, 
             yaxis: {
                 automargin: true,
             },
@@ -620,7 +640,7 @@ class FlightDashboard extends React.Component {
             }};
 
         let eventTimelinelayout = {
-            width: 900, height: 600, 
+            width: 1000, height: 500, 
             yaxis: {
                 range: [0, 1],
                 showgrid: false,
@@ -733,9 +753,9 @@ class FlightDashboard extends React.Component {
 
 
 
-                    <div className="table aggregated" style={{'--totalEvents': events.length, '--totalStatistics': statistics[1].length}}>
+                    <div className="table aggregated" style={{'--totalEvents': events.length, '--totalStatistics': statistics[1].length, zoom: 0.8, MozTransformStyle: "scale(0.8)", MozTransformOrigin: '0 0'}}>
                             <div className="row header">
-                                <span className="icon" > <Link to="" className="icon-container icon-download dark hover" onClick={() => this.downloadAggregatedCSV()}>Download Aggregated Values</Link></span>
+                                <span className="icon" > <Link to="" className="icon-container icon-download dark hover" onClick={(e) => this.downloadAggregatedCSV(e)}>Download Aggregated Values</Link></span>
 
                                 {statisticNames}
                                 {eventNames}
@@ -751,7 +771,7 @@ class FlightDashboard extends React.Component {
 
                     
 
-                    <div className="plotDiv" style={{width: '900px', height: '600px'}}>
+                    <div className="plotDiv" style={{width: '1000px', height: '500px'}}>
                         <div className="dropdown">
                             <select name="" onChange={(event) => (this.setState({visual: event.target.value}))}>
                                 <option id="boxPlots" value="Box Plots">Box Plot</option>
@@ -779,9 +799,9 @@ class FlightDashboard extends React.Component {
                         :
                         
 
-                        <div className="table session analytics" style={{'--totalEvents': events.length, '--totalStatistics': this.state.statistics[this.state.statistics.length - 1].length, height: "300px"}}>
+                        <div className="table session analytics" style={{'--totalEvents': events.length, '--totalStatistics': this.state.statistics[this.state.statistics.length - 1].length, height: "300px", zoom: 0.8, MozTransformStyle: "scale(0.8)", MozTransformOrigin: '0 0'}}>
                             <div className="row header"> 
-                                <span className="icon" > <Link to="" className="icon-container icon-download dark hover" onClick={() => this.downloadStatisticsCSV()}>Download Statistics</Link></span>
+                                <span className="icon" > <Link to="" className="icon-container icon-download dark hover" onClick={(e) => this.downloadStatisticsCSV(e)}>Download Statistics</Link></span>
 
                                 <span className="centre">Group</span>
                                 <span className="centre"><strong>SessionID</strong></span>
