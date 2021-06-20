@@ -253,7 +253,7 @@ class FlightListItem extends React.Component {
                     <span className="subtitle">{this.props.timestampSplit.date.friendly}</span>
                 </span>
                 <span className="sessions centre">{this.props.sessions}</span>
-                <span className="icon"><Link to={`/flight/${this.props.id}/dashboard/`} className="icon-container icon-token dark hover">Go to Dashboard</Link></span>
+                <span className="icon"><Link to={`/flight/${this.props.id}/dashboard/`} className="icon-container icon-dashboard dark hover">Go to Dashboard</Link></span>
                 <span className="icon"><Link to={`/flight/${this.props.id}/token/`} className="icon-container icon-token dark hover">Get Token</Link></span>
                 <span className="icon"><Link to="" onClick={e => this.downloadData(e)} className="icon-container icon-download dark hover">Download</Link></span>
                 <span className="icon"><Link to="" onClick={e => this.downloadScreenCaptures(e)} className="icon-container icon-download-sc dark hover">Download Screen Captures</Link></span>

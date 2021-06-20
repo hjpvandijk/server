@@ -245,7 +245,6 @@ class FlightLogDataOneSessionView(APIView):
         mongo_collection_handle = get_mongo_collection_handle(mongo_db_handle, str(flight.id))
 
         try:
-            print(str(sessionID))
             # Get all of the data.
             # This also omits the _id field that is added by MongoDB -- we don't need it.
             log_entries = mongo_collection_handle.find({'sessionID': str(sessionID)}, {'_id': False})
@@ -363,11 +362,8 @@ class FlightLogInteractionEventCounterView(APIView):
         # Get the count and if it matches the length...
         # no_entries = log_entries.count()
         log_entries_list = list(log_entries)
-        # print(log_entries_list)
-        print("got entries")
         entries = {}
         try:
-            # log_entries_json = json.loads(log_entries_list)
             df = pd.json_normalize(log_entries_list)
             unique = df['sessionID'].unique()
             all_values = []
@@ -375,22 +371,17 @@ class FlightLogInteractionEventCounterView(APIView):
                 if id is None:
                     continue
                 session = df[ df['sessionID'] == id]
-                # session = session[ session['eventType'] == 'interactionEvent']
-                unique_vals = session['eventDetails.name'].unique()
-                value_counts = session['eventDetails.name'].value_counts()
-                # entry = {"sessionID": id, "value_counts": {}}
-                entries[id] = {}
-                for val in unique_vals:
-                    if(not (isinstance(val, float) and math.isnan(val))):
-                        if val not in all_values:
-                            all_values.append(val)
-                        count = value_counts.get(val)
-                        entries[id][val] = int(count)
-                # jsonObj = json.dumps(entry)
-
-                # if i == unique.size - 1:
-                #     stream.write(f'{json.dumps(entry)}{os.linesep}{os.linesep}')
-                #     continue
+                if('eventDetails.name' in session.keys()):
+                    unique_vals = session['eventDetails.name'].unique()
+                    value_counts = session['eventDetails.name'].value_counts()
+                    entries[id] = {}
+                    for val in unique_vals:
+                        if(not (isinstance(val, float) and math.isnan(val))):
+                            if val not in all_values:
+                                all_values.append(val)
+                            count = value_counts.get(val)
+                            entries[id][val] = int(count)
+  
                 
             stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
             stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
@@ -438,25 +429,24 @@ class FlightLogInteractionEventTimelineView(APIView):
         # Get the count and if it matches the length...
         # no_entries = log_entries.count()
         log_entries_list = list(log_entries)
-        # print(log_entries_list)
         entries = {}
         try:
             # log_entries_json = json.loads(log_entries_list)
             df = pd.json_normalize(log_entries_list)
-            unique = df['eventDetails.name'].unique()
-            for name in (unique):
-                event = df[ df['eventDetails.name'] == name]
-                sortedEvent = event.sort_values(by="timestamps.sinceSessionStartMillis")
-                # sortedTime = sorted(event["timestamps.sinceSessionStartMillis"].to_numpy())
-                sortedTime = sortedEvent["timestamps.sinceSessionStartMillis"].to_numpy()
-                sortedIDs = sortedEvent["sessionID"].to_numpy()
-                entries[name] = {}
-                entries[name]["timestamps"] = [int(x) for x in sortedTime]
-                entries[name]["sessionIDs"] = sortedIDs.tolist()
+            if('eventDetails.name' in df.keys()):
+
+                unique = df['eventDetails.name'].unique()
+                for name in (unique):
+                    event = df[ df['eventDetails.name'] == name]
+                    sortedEvent = event.sort_values(by="timestamps.sinceSessionStartMillis")
+                    sortedTime = sortedEvent["timestamps.sinceSessionStartMillis"].to_numpy()
+                    sortedIDs = sortedEvent["sessionID"].to_numpy()
+                    entries[name] = {}
+                    entries[name]["timestamps"] = [int(x) for x in sortedTime]
+                    entries[name]["sessionIDs"] = sortedIDs.tolist()
 
                 
             stream.write(f'{json.dumps(entries)}{os.linesep}{os.linesep}')
-            # stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
 
             stream.write(f']')
             stream.seek(0)
@@ -501,7 +491,6 @@ class FlightLogStatisticsView(APIView):
         # Get the count and if it matches the length...
         # no_entries = log_entries.count()
         log_entries_list = list(log_entries)
-        # print(log_entries_list)
         entries = {}
         try:
             # log_entries_json = json.loads(log_entries_list)
@@ -512,7 +501,6 @@ class FlightLogStatisticsView(APIView):
                 if id is None:
                     continue
                 session = df[ df['sessionID'] == id]
-                # session = session[ session['eventType'] == 'interactionEvent']
                 entries[id] = {}
                 for func in statisticMethods:
                     entry = func(session)

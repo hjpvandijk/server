@@ -4,12 +4,7 @@ import TrailItem from '../nav/trail/trailItem';
 import Constants from '../constants';
 import LogUIDevice from '../common/logUIDevice';
 import {Link, Redirect} from 'react-router-dom';
-// import JSZip from 'jszip' ;
 import Plot from 'react-plotly.js';
-// import '../node_modules/react-vis/dist/style.css';
-// import {XYPlot, LineSeries} from 'react-vis';
-// import Plotly from 'plotly.js';
-
 
 class FlightDashboard extends React.Component {
 
@@ -92,7 +87,6 @@ class FlightDashboard extends React.Component {
         await this.getEventCounts();
         await this.getStatistics();
         await this.getEventTimeline();
-        // this.aggregateValues();
         this.getBoxPlotArraysEvents(this.state.eventCounts, this.state.events);
         this.getBoxPlotArraysStatistics();
         this.props.clientMethods.setMenuComponent(Menu);
@@ -106,7 +100,6 @@ class FlightDashboard extends React.Component {
             await this.getEventCounts();
             await this.getStatistics();
             await this.getEventTimeline();
-            // this.aggregateValues();
             this.getBoxPlotArraysEvents(this.state.eventCounts, this.state.events)
             this.getBoxPlotArraysStatistics();
             this.props.clientMethods.setTrailComponent(this.getTrail());
@@ -243,7 +236,7 @@ class FlightDashboard extends React.Component {
         link.setAttribute("download", this.state.flightInfo.id+".csv");
         document.body.appendChild(link); // Required for FF
 
-        link.click(); // This will download the data file named "my_data.csv".
+        link.click(); // This will download the csv file.
 
         return false;
     }
@@ -302,7 +295,7 @@ class FlightDashboard extends React.Component {
         link.setAttribute("download", this.state.flightInfo.id+"_aggregated.csv");
         document.body.appendChild(link); // Required for FF
 
-        link.click(); // This will download the data file named "my_data.csv".
+        link.click(); // This will download the csv file.
 
         return false;
     }
@@ -487,11 +480,6 @@ class FlightDashboard extends React.Component {
 
         const timeSeriesPlots = [];
         events.forEach(event => {
-            // const y = [];
-            // var ct = 1;
-            // eventTimeline[event]["timestamps"].forEach(e => {
-            //     y.push(ct++);
-            // });
 
             const y = [];
             const x = [];
@@ -505,25 +493,13 @@ class FlightDashboard extends React.Component {
                 }
             });
 
-            const groups = [];
-            // eventTimeline[event]["sessionIDs"].forEach(sessionID => {
-            //     if(this.state.groupPerSession[sessionID] == undefined){
-            //         groups.push("");
-            //     } else{
-            //         groups.push(this.state.groupPerSession[sessionID]);
-            //     }
-            // });
-
             var entry = {
-                // x: eventTimeline[event]["timestamps"],
                 x: x,
                 y: y,
                 hovertext: sessions,
-                // customdata: groups,
                 type: 'scatter',
                 name: event,
                 mode: 'lines+markers',
-                // transforms: transforms
             };
             timeSeriesPlots.push(entry);
         });
@@ -550,13 +526,7 @@ class FlightDashboard extends React.Component {
                 boxpoints: 'all',
                 transforms: transforms
             };
-            // var entry = {
-            //     y: valuesPerEvent[event]["values"],
-            //     boxpoints: 'all',
-            //     jitter: 0,
-            //     pointpos: -1.8,
-            //     type: 'box'
-            //   };
+
             boxPlots.push(entry);
         });
 
@@ -580,52 +550,54 @@ class FlightDashboard extends React.Component {
                 boxpoints: 'all',
                 transforms: transforms
             };
-            // var entry = {
-            //     y: valuesPerEvent[event]["values"],
-            //     boxpoints: 'all',
-            //     jitter: 0,
-            //     pointpos: -1.8,
-            //     type: 'box'
-            //   };
             boxPlots.push(entry);
         });
 
         const eventTimelines = [];
         events.forEach(event => {
             const y = [];
-            eventTimeline[event]["timestamps"].forEach(e => {
-                y.push(0.5);
-            });
-
-            const groups = [];
-            eventTimeline[event]["sessionIDs"].forEach(sessionID => {
-                if(this.state.groupPerSession[sessionID] == undefined){
-                    groups.push("");
-                } else{
-                    groups.push(this.state.groupPerSession[sessionID]);
+            const x = [];
+            const sessions = [];
+            eventTimeline[event]["timestamps"].forEach(function (e, i){
+                if (eventTimeline[event]["sessionIDs"][i] !== null && (visualGroup=="All" || groupPerSession[eventTimeline[event]["sessionIDs"][i]] == visualGroup)){
+                    y.push(0.5);
+                    x.push(eventTimeline[event]["timestamps"][i]);
+                    sessions.push(eventTimeline[event]["sessionIDs"][i]);
                 }
             });
 
+            // const groups = [];
+            // eventTimeline[event]["sessionIDs"].forEach(sessionID => {
+            //     if(this.state.groupPerSession[sessionID] == undefined){
+            //         groups.push("");
+            //     } else{
+            //         groups.push(this.state.groupPerSession[sessionID]);
+            //     }
+            // });
+
+            
+            
+
             var entry = {
-                x: eventTimeline[event]["timestamps"],
+                // x: eventTimeline[event]["timestamps"],
+                x: x,
                 y: y,
-                hovertext: eventTimeline[event]["sessionIDs"],
-                customdata: groups,
+                // hovertext: eventTimeline[event]["sessionIDs"],
+                hovertext: sessions,
+                // customdata: groups,
                 name: event,
                 type: 'scatter',
                 mode: 'markers',
                 marker: {
-                    // color: 'rgba(17, 157, 255,0.5)',
                     opacity: 0.5,
                     symbol: 'line-ns-open',
                     size: 100,
                     line: {
-                        // color: 'rgba(17, 157, 255,0.5)',
                         width: 10   
                     },
-                hoverinfo: "x",
                 },
-                transforms: transforms
+                hovertemplate:'<b>%{hovertext}</b>',
+                // transforms: transforms
             };
             eventTimelines.push(entry);
         });
@@ -784,7 +756,6 @@ class FlightDashboard extends React.Component {
                                 plots
                                 }
                                 layout={ layout}
-                                // config={{responsive: true}}
                             />
                     </div>
                     <div className="filters">
@@ -883,22 +854,15 @@ class SessionListItem extends React.Component {
                 </span>
                 <span className="centre">
                     <input className="title mono" type="text" style={{width: "60px"}} onChange={event => this.props.setGroup(this.props.id, event.target.value)}/>
-                    {/* <span className="title mono">1</span> */}
                 </span>
                 <span className="centre">
                     <span className="subtitle mono"><Link to={this.props.link}> {this.props.id} </Link> </span> 
                 </span>
 
-                {/* <span className="double centre">
-                    <span className="title mono"> {(this.props.eventCounts == undefined) ? 0 : (this.props.eventCounts["value_counts"]["inputgrouptest"] == undefined ? 0 : this.props.eventCounts["value_counts"]["inputgrouptest"])} </span>
-                </span> */}
+
                 {valuePerStatistic}
                 {countPerEvent}
-                    
-                {/* <span className="icon"><span className={`icon-container icon-${this.props.agentDetails.is_desktop ? 'desktop': 'phone'} dark`}></span></span>
-                <span className="icon"><span className={`icon-container icon-${iconClassOS} dark`}></span></span>
-                <span className="browser icon"><span className={`icon-container icon-${iconClassBrowser} dark`}></span></span>
-                <span><span className={`indicator ${this.props.splitTimestamps.end_timestamp ? 'green' : 'orange'}`}></span></span> */}
+
             </div>
         )
     };

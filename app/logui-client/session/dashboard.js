@@ -96,9 +96,7 @@ class SessionDashboard extends React.Component {
         await this.getEventTimeline();
         await this.getScreenCapture();
         await this.getLogs();
-        // this.aggregateValues();
-        // this.getBoxPlotArraysEvents(this.state.eventCounts, this.state.events);
-        // this.getBoxPlotArraysStatistics();
+
         this.props.clientMethods.setMenuComponent(Menu);
         this.props.clientMethods.setTrailComponent(this.getTrail());
     }
@@ -112,9 +110,7 @@ class SessionDashboard extends React.Component {
             await this.getEventTimeline();
             await this.getScreenCapture();
             await this.getLogs();
-            // this.aggregateValues();
-            // this.getBoxPlotArraysEvents(this.state.eventCounts, this.state.events)
-            // this.getBoxPlotArraysStatistics();
+
             this.props.clientMethods.setTrailComponent(this.getTrail());
         }
     }
@@ -151,8 +147,6 @@ class SessionDashboard extends React.Component {
                     eventCounts: jsonObj[0][this.props.match.params.sessionid],
                     events: jsonObj[1]
                 });
-                console.log("eventCounts: ");
-                console.log(jsonObj);
             });
     };
 
@@ -168,8 +162,6 @@ class SessionDashboard extends React.Component {
                 this.setState({
                     eventTimeline: jsonObj[0],
                 });
-                console.log("Eventtimeline: ");
-                console.log(jsonObj[0]);
             });
     };
 
@@ -188,106 +180,8 @@ class SessionDashboard extends React.Component {
                 this.setState({
                     statistics: stats,
                 });
-                console.log("stats: ");
-                console.log(jsonObj);
             });
     };
-
-    // downloadStatisticsCSV(){
-    //     let rows = [];
-    //     const statisticNames = [];
-    //     this.state.statistics[this.state.statistics.length - 1].forEach(element => {
-    //         if(this.state.filters[element] == undefined){
-    //             statisticNames.push(element);
-    //         }
-    //     });
-
-    //     const eventNames = [];
-    //     this.state.events.forEach(element => {
-    //         if(this.state.filters[element] == undefined){
-    //             eventNames.push(element);
-    //         }
-    //     });
-    //     rows.push(["sessionID"].concat(statisticNames).concat(eventNames));
-
-        
-    //     let row = [];
-
-    //     const valuePerStatistic = []
-    //     const statisticValues = this.state.statistics[0][session.id];
-    //     statisticNames.forEach(statistic => {
-    //         if(this.state.filters[statistic] == undefined){
-
-    //             var value = (statisticValues == undefined) ? 0 : ([statistic] == undefined ? 0 : statisticValues[statistic]);
-    //             valuePerStatistic.push(
-    //                 value
-    //             );
-    //         }
-    //     });
-
-    //     const countPerEvent = [];
-    //     const eventCounts = this.state.eventCounts[session.id]
-    //     eventNames.forEach(event => {
-    //         if(this.state.filters[event] == undefined){
-
-    //             countPerEvent.push(
-    //                 (eventCounts == undefined) ? 0 : (eventCounts[event] == undefined ? 0 : eventCounts[event])
-    //             );
-    //         }
-    //     });
-
-    //     row.push([session.id].concat(valuePerStatistic).concat(countPerEvent));
-        
-    //     rows.push(row);
-            
-
-        
-
-
-    //     // https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
-    //     let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-
-    //     var encodedUri = encodeURI(csvContent);
-    //     var link = document.createElement("a");
-    //     link.setAttribute("href", encodedUri);
-    //     link.setAttribute("download", this.state.flightInfo.id+".csv");
-    //     document.body.appendChild(link); // Required for FF
-
-    //     link.click(); // This will download the data file named "my_data.csv".
-
-
-    // }
-
-
-    // aggregateValues(){
-    //     const result = {};
-    //     result["events"] = this.aggregateValuesParam(this.state.eventCounts, this.state.events);
-    //     result["statistics"] = this.aggregateValuesParam(this.state.statistics[0], this.state.statistics[1]);
-    //     return result;
-
-    // };
-
-
-    // aggregateValuesParam(dataPerSession, valueNames){
-    //     const result = {};
-    //     valueNames.forEach(valueName => {
-    //         let total = 0;
-    //         let totalAdds = 0;
-    //         Object.values(this.state.sessionListing).forEach(session => {
-    //             if (this.state.visualGroup == "All" || this.state.groupPerSession[session.id] == this.state.visualGroup){
-    //                 if(dataPerSession[session.id] != undefined){
-    //                     const val = dataPerSession[session.id][valueName];
-    //                     if (typeof val ==  'number'){
-    //                         total += val;
-    //                     }
-    //                 }
-    //                 totalAdds++;
-    //             }
-    //         })
-    //         result[valueName] = total/totalAdds;
-    //     });
-    //     return result;
-    // };
 
     setGroup = (sessionID, group) => {
         if(group == ""){
@@ -299,30 +193,30 @@ class SessionDashboard extends React.Component {
         this.forceUpdate();
     }
 
-    getAllGroups(){
-        const groups = [];  
-        Object.keys(this.state.groupPerSession).forEach(sessionID => {
-            var group = this.state.groupPerSession[sessionID];
-            if(!groups.includes(group)){
-                groups.push(group);
-            }
-        });
-        if(groups.length == 0){
-            this.state.visualGroup = "All";
-        }
-        return groups;
-    }
+    // getAllGroups(){
+    //     const groups = [];  
+    //     Object.keys(this.state.groupPerSession).forEach(sessionID => {
+    //         var group = this.state.groupPerSession[sessionID];
+    //         if(!groups.includes(group)){
+    //             groups.push(group);
+    //         }
+    //     });
+    //     if(groups.length == 0){
+    //         this.state.visualGroup = "All";
+    //     }
+    //     return groups;
+    // }
 
 
-    updateFilters(checked, label){
-        if(checked){
-            delete(this.state.filters[label]);
-        }
-        else {
-            this.state.filters[label] = true;
-        }
-        this.forceUpdate();
-    }
+    // updateFilters(checked, label){
+    //     if(checked){
+    //         delete(this.state.filters[label]);
+    //     }
+    //     else {
+    //         this.state.filters[label] = true;
+    //     }
+    //     this.forceUpdate();
+    // }
 
     async getScreenCapture() {
         var response = fetch(`${Constants.SERVER_API_ROOT}flight/download_sc/${this.props.match.params.id}/`, {
@@ -337,12 +231,9 @@ class SessionDashboard extends React.Component {
                     alert('There is no log data available to download for this flight at present.');
                     return;
                 }
-                console.log("sc: ");
-                console.log(jsonObj);
                 
                 for(var i=0; i<jsonObj.length; i++){
                     var fileName = jsonObj[i]['sessionID'];
-                    console.log(fileName);
                     if(fileName == this.props.match.params.sessionid){
                         // From: https://stackoverflow.com/questions/16245767/creating-a-blob-from-a-base64-string-in-javascript
                         const byteCharacters = atob(jsonObj[i]['bytes']);
@@ -357,9 +248,7 @@ class SessionDashboard extends React.Component {
 
                         this.setState({
                             screencapture: URL.createObjectURL(blob)
-                            // screencapture: jsonObj[i]['bytes']
                         });
-                        console.log("set screencapture");
                         return;
                     }
 
@@ -380,8 +269,6 @@ class SessionDashboard extends React.Component {
                 this.setState({
                     logs: jsonObj
                 });
-                console.log("logs: ");
-                console.log(jsonObj);
             });
     };
 
@@ -413,7 +300,6 @@ class SessionDashboard extends React.Component {
         }
         
         if (!this.state.flightInfo || !this.state.eventCounts || !this.state.statistics || !this.state.eventTimeline || !this.state.events ||!this.state.logs) {
-            console.log("null");
             return(null); // Could add a loading thing here.
         }
 
@@ -494,7 +380,6 @@ class SessionDashboard extends React.Component {
             });
 
             var entry = {
-                // x: eventTimeline[event]["timestamps"],
                 x: x,
                 y: y,
                 hovertext: sessions,
@@ -502,7 +387,6 @@ class SessionDashboard extends React.Component {
                 type: 'scatter',
                 name: event,
                 mode: 'lines+markers',
-                // transforms: transforms
             };
             timeSeriesPlots.push(entry);
         });
@@ -534,16 +418,14 @@ class SessionDashboard extends React.Component {
                 type: 'scatter',
                 mode: 'markers',
                 marker: {
-                    // color: 'rgba(17, 157, 255,0.5)',
                     opacity: 0.5,
                     symbol: 'line-ns-open',
                     size: 100,
                     line: {
-                        // color: 'rgba(17, 157, 255,0.5)',
                         width: 10
                     },
                 },
-                hoverinfo: "x",
+                hovertemplate:'<b>%{hovertext}</b>',
                 transforms: transforms
             };
             eventTimelines.push(entry);
