@@ -193,31 +193,6 @@ class SessionDashboard extends React.Component {
         this.forceUpdate();
     }
 
-    // getAllGroups(){
-    //     const groups = [];  
-    //     Object.keys(this.state.groupPerSession).forEach(sessionID => {
-    //         var group = this.state.groupPerSession[sessionID];
-    //         if(!groups.includes(group)){
-    //             groups.push(group);
-    //         }
-    //     });
-    //     if(groups.length == 0){
-    //         this.state.visualGroup = "All";
-    //     }
-    //     return groups;
-    // }
-
-
-    // updateFilters(checked, label){
-    //     if(checked){
-    //         delete(this.state.filters[label]);
-    //     }
-    //     else {
-    //         this.state.filters[label] = true;
-    //     }
-    //     this.forceUpdate();
-    // }
-
     async getScreenCapture() {
         var response = fetch(`${Constants.SERVER_API_ROOT}flight/download_sc/${this.props.match.params.id}/`, {
             method: 'GET',
@@ -431,22 +406,39 @@ class SessionDashboard extends React.Component {
             eventTimelines.push(entry);
         });
 
-        let boxTimeseriesLayout = {
-            width: 800, height: 500
-        };
+        let boxTimeseriesLayout = { //Todo: add axis lables
+            width: 1000, height: 500, 
+            yaxis: {
+                automargin: true,
+            },
+            xaxis: {
+                automargin: true,
+            }};
 
-        let eventTimelineLayout = {
-            width: 800, height: 500, 
+        let timeSeriesLayout = {//Todo: add axis lables
+            width: 1000, height: 500, 
+            yaxis: {
+                automargin: true,
+            },
+            xaxis: {
+                automargin: true,
+            }};
+
+        let eventTimelineLayout = {//Todo: add axis lables
+            width: 1000, height: 500, 
             yaxis: {
                 range: [0, 1],
                 showgrid: false,
                 showline: false,
                 showticklabels: false,
                 zeroline: false,
+                automargin: true
               },
             xaxis: {
+                text: "time since session start (ms)",
                 showgrid: false,
                 showline: false,
+                automargin: true
             },
             };
 
@@ -458,17 +450,11 @@ class SessionDashboard extends React.Component {
                 layout = boxTimeseriesLayout;
             } else if(visual == "Time Series Plots"){
                 plots = timeSeriesPlots;
-                layout = boxTimeseriesLayout;
+                layout = timeSeriesLayout;
             } else if(visual == "Event Timeline"){
                 plots = eventTimelines;
                 layout = eventTimelineLayout;
             }
-
-        // const groupselect = [];
-        // this.getAllGroups().forEach(group =>{
-        //     var groupOption = <option id={group} value={group}>{"Group " + group}</option>;
-        //     groupselect.push(groupOption);
-        // });
 
         const filterEntries = [];
         statistics[1].forEach(stat => {
@@ -496,17 +482,9 @@ class SessionDashboard extends React.Component {
         logs.forEach(log => {
             logEntries.push(
             <div className="row double-height">
-                {/* <span className="centre">
-                    <span key={this.props.match.params.sessionid + log + "eventType"} className="title mono"> {log["eventType"]} </span>
-                </span> 
-                  
-                <span className="centre">
-                    <span key={this.props.match.params.sessionid + log + "eventDetails"} className="title mono"> {JSON.stringify(log["eventDetails"])} </span>
-                </span>  */}
 
                 <span className="centre">
                 <span key={this.props.match.params.sessionid + log } className="title mono" onClick={() => this.setState({screencapturetime: log["timestamps"]["sinceScreenCaptureStartMillis"]/1000})}> {JSON.stringify(log)} </span>
-                {/* <span key={this.props.match.params.sessionid + log } className="title mono" onMouseEnter={() => this.setState({screencapturetime: 3})}> {JSON.stringify(log)} </span> */}
                 </span>   
                          
             </div>

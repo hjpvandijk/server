@@ -566,25 +566,14 @@ class FlightDashboard extends React.Component {
                 }
             });
 
-            // const groups = [];
-            // eventTimeline[event]["sessionIDs"].forEach(sessionID => {
-            //     if(this.state.groupPerSession[sessionID] == undefined){
-            //         groups.push("");
-            //     } else{
-            //         groups.push(this.state.groupPerSession[sessionID]);
-            //     }
-            // });
 
             
             
 
             var entry = {
-                // x: eventTimeline[event]["timestamps"],
                 x: x,
                 y: y,
-                // hovertext: eventTimeline[event]["sessionIDs"],
                 hovertext: sessions,
-                // customdata: groups,
                 name: event,
                 type: 'scatter',
                 mode: 'markers',
@@ -597,12 +586,11 @@ class FlightDashboard extends React.Component {
                     },
                 },
                 hovertemplate:'<b>%{hovertext}</b>',
-                // transforms: transforms
             };
             eventTimelines.push(entry);
         });
 
-        let boxTimeseriesLayout = {
+        let boxTimeseriesLayout = {//Todo: add axis lables
             width: 1000, height: 500, 
             yaxis: {
                 automargin: true,
@@ -611,7 +599,16 @@ class FlightDashboard extends React.Component {
                 automargin: true,
             }};
 
-        let eventTimelinelayout = {
+        let timeSeriesLayout = {//Todo: add axis lables
+            width: 1000, height: 500, 
+            yaxis: {
+                automargin: true,
+            },
+            xaxis: {
+                automargin: true,
+            }};
+
+        let eventTimelineLayout = {//Todo: add axis lables
             width: 1000, height: 500, 
             yaxis: {
                 range: [0, 1],
@@ -637,10 +634,10 @@ class FlightDashboard extends React.Component {
             layout = boxTimeseriesLayout;
         } else if(visual == "Time Series Plots"){
             plots = timeSeriesPlots;
-            layout = boxTimeseriesLayout;
+            layout = timeSeriesLayout;
         } else if(visual == "Event Timeline"){
             plots = eventTimelines;
-            layout = eventTimelinelayout;
+            layout = eventTimelineLayout;
         }
 
         const groupselect = [];
