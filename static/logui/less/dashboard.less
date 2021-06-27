@@ -1,0 +1,107 @@
+@import 'global.less';
+
+main section div.table.session.analytics div.row {
+    grid-template-columns:
+        25px 
+        80px
+        250px 
+        repeat(var(--totalStatistics), 200px)
+        repeat(var(--totalEvents), 200px);
+        // 1fr 1fr 1fr 1fr 1fr;
+    
+    display: grid;
+}
+
+main section div.table.aggregated div.row {
+    grid-template-columns: 
+        25px
+        repeat(var(--totalStatistics), 200px)
+        repeat(var(--totalEvents), 200px);
+        // 1fr 1fr 1fr 1fr 1fr;
+    
+    display: grid;
+}
+
+
+main section div.table.logs {
+    height: 300px;
+    clear:both;
+    overflow: auto;
+    white-space: nowrap;
+}   
+
+main section div.videoDiv {
+    // display: inline-block;
+    float: right;
+}
+
+main section div.table.session.analytics{
+    clear: both;
+    overflow: auto;
+    white-space: nowrap;
+    // margin-top: 50px;
+}
+
+main section div.table.aggregated{
+
+    overflow: auto;
+    white-space: nowrap;
+}
+
+main section div.table.session.analytics div.row span.browser {
+    position: relative;
+    right: 5px;
+}
+
+main section div.table div.row span.double span.title.analytics {
+    display: block;
+    position: relative;
+    bottom: 8px;
+    font-size: 80%;
+    height: 13pt;
+    line-height: auto;
+}
+
+main section div.dropdown {
+    position: absolute;
+    z-index: 1;
+    // float: left;
+    left: 0;
+    // display: inline-block;
+}
+
+// main section div.groupDropdown {
+    
+// }
+
+main section div.plotDiv {
+    position: relative;
+    float: left;
+    // display: inline-block;
+}
+
+main section div.filters {
+    // position:absolute;
+    float: right;
+    right: 250px;
+    height: 600px;
+    overflow: auto;
+    white-space: nowrap;
+}
+
+main section span.download {
+    // width: 25px;
+    // height: 25px;
+    // z-index: 1;
+    // float: right;
+    display: inline-block;
+}
+
+main section span.download a {
+    display: block;
+    width: 25px;
+    height: 25px;
+    line-height: 0; 
+    font-size: 0;
+    color: transparent; 
+}

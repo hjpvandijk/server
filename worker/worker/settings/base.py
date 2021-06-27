@@ -84,7 +84,8 @@ COMPRESS_OUTPUT_DIR = 'cache'
 COMPRESS_PRECOMPILERS = (
     ('text/less', 'lessc {infile} {outfile}'),
     ('text/jsx', 'cat {infile} | babel > {outfile}'),
-    ('module', 'browserify {infile} -t babelify --outfile {outfile}'),
+    # ('module', 'browserify {infile} -t babelify --outfile {outfile}'),
+    ('module', 'browserify {infile} -t babelify | minify --js > {outfile}'),
 )
 
 COMPRESS_CSS_FILTERS = [
@@ -93,8 +94,8 @@ COMPRESS_CSS_FILTERS = [
 ]
 
 COMPRESS_JS_FILTERS = [
-    'compressor.filters.jsmin.JSMinFilter',
-    'compressor.filters.jsmin.CalmjsFilter',
+    # 'compressor.filters.jsmin.JSMinFilter',
+    # 'compressor.filters.jsmin.CalmjsFilter',
 ]
 
 CORS_ALLOWED_ORIGINS = [

@@ -1,18 +1,22 @@
 from ...control.models import Application, Flight, Session
-from mongo import get_mongo_connection_handle, get_mongo_collection_handle
+from mongo import get_mongo_connection_handle, get_mongo_collection_handle, get_mongo_collection_handle_gridfs
 
-from channels.generic.websocket import JsonWebsocketConsumer
+from channels.generic.websocket import WebsocketConsumer
 from django.core.exceptions import ValidationError
 from dateutil import parser as date_parser
 from urllib.parse import urlparse
 from django.core import signing
 from datetime import datetime
+import json
+import base64
+import sys
+import traceback
 
 SUPPORTED_CLIENTS = ['0.5.1', '0.5.2', '0.5.3']
-KNOWN_REQUEST_TYPES = ['handshake', 'closedown', 'logEvents']
+KNOWN_REQUEST_TYPES = ['handshake', 'closedown', 'logEvents', 'screenCapture']
 BAD_REQUEST_LIMIT = 3
 
-class EndpointConsumer(JsonWebsocketConsumer):
+class EndpointConsumer(WebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,23 +33,48 @@ class EndpointConsumer(JsonWebsocketConsumer):
         self._client_ip = self.scope['client'][0]  # Is this the correct value?
         self.accept()
 
-    def receive_json(self, request_dict):
-        if not self.validate_request(request_dict) or not self.validate_handshake(request_dict):
-            return
+    # def receive_json(self, request_dict):
+    #     if not self.validate_request(request_dict) or not self.validate_handshake(request_dict):
+    #         return
         
-        if request_dict['type'] == 'handshake':
-            self.send_json(self.generate_message_object('handshakeSuccess', {
-                'sessionID': str(self._session.id),
-                'clientStartTimestamp': str(self._session.client_start_timestamp),
-                'newSessionCreated': self._session_created,
-            }))
-            return
+    #     if request_dict['type'] == 'handshake':
+    #         self.send_json(self.generate_message_object('handshakeSuccess', {
+    #             'sessionID': str(self._session.id),
+    #             'clientStartTimestamp': str(self._session.client_start_timestamp),
+    #             'newSessionCreated': self._session_created,
+    #         }))
+    #         return
         
-        type_redirection = {
-            'logEvents': self.handle_log_events,
-        }
+    #     type_redirection = {
+    #         'logEvents': self.handle_log_events,
+    #     }
 
-        type_redirection[request_dict['type']](request_dict)
+    #     type_redirection[request_dict['type']](request_dict)
+
+    def receive(self, text_data=None, bytes_data=None):
+        request_dict = None
+        if text_data:
+            request_dict = json.loads(text_data)
+        
+            if not self.validate_request(request_dict) or not self.validate_handshake(request_dict):
+                return
+            
+            if request_dict['type'] == 'handshake':
+                self.send(json.dumps(self.generate_message_object('handshakeSuccess', {
+                    'sessionID': str(self._session.id),
+                    'clientStartTimestamp': str(self._session.client_start_timestamp),
+                    'newSessionCreated': self._session_created,
+                })))
+                return
+            
+            type_redirection = {
+                'logEvents': self.handle_log_events
+            }
+
+            type_redirection[request_dict['type']](request_dict)
+        elif bytes_data:
+            self.handle_screen_capture(bytes_data)
+            return
     
     def disconnect(self, close_code):
         self._mongo_connection.close()
@@ -202,18 +231,93 @@ class EndpointConsumer(JsonWebsocketConsumer):
             self.close(code=4006)
             return
         
-        import json
 
         for item in request_dict['payload']['items']:
+            print(item)
             if item['eventType'] == 'statusEvent' and item['eventDetails']['type'] == 'stopped':
                 self._session.client_end_timestamp = date_parser.parse(item['timestamps']['eventTimestamp'])
                 self._session.server_end_timestamp = datetime.now()
                 self._session.save()
 
+
             item['applicationID'] = str(self._application.id)
             item['flightID'] = str(self._flight.id)
-
+            
+            
             if not self._mongo_collection:
                 self._mongo_collection = get_mongo_collection_handle(self._mongo_db_handle, str(self._flight.id))
-            
+            # print(item)
             self._mongo_collection.insert(item)
+
+    def handle_screen_capture(self, binary_data):
+        if not self._session:
+            self.close(code=4006)
+            return
+        
+
+        print("SCREEN CAPTURE")
+        # print(item[ 'eventDetails']) 
+
+
+        mongo_collection_sc_gridfs = get_mongo_collection_handle_gridfs(self._mongo_db_handle, str(self._flight.id) + "_sc")
+
+        # mongo_collection_sc_gridfs.put(binary_data, _id=self._session.id)
+
+        if(mongo_collection_sc_gridfs.exists(self._session.id)):
+            try:
+                entry = mongo_collection_sc_gridfs.get(self._session.id).read()
+                # entry.extend(binary_data)
+                entry += binary_data
+                mongo_collection_sc_gridfs.delete(self._session.id)
+                mongo_collection_sc_gridfs.put(entry, _id=self._session.id)
+            except:
+                print("Unexpected error:", sys.exc_info()[0])
+                print(traceback.print_exc())
+                return
+            
+        else:
+            # binary_array = bytearray(binary_data)
+            mongo_collection_sc_gridfs.put(binary_data, _id=self._session.id)
+     
+
+    # def handle_screen_capture(self, request_dict):
+    #     if not self._session:
+    #         self.close(code=4006)
+    #         return
+        
+    #     import json
+
+    #     item = request_dict['payload']['item']
+    #     if item['eventType'] == 'screenCaptureEvent':
+    #         print("SCREEN CAPTURE")
+    #         # print(item[ 'eventDetails']) 
+
+
+    #         item['applicationID'] = str(self._application.id)
+    #         item['flightID'] = str(self._flight.id)
+    #         # print(item['eventDetails']['chunk'])
+        
+    #         mongo_collection_sc_gridfs = get_mongo_collection_handle_gridfs(self._mongo_db_handle, str(self._flight.id) + "_sc")
+    #         if(mongo_collection_sc_gridfs.exists(item['sessionID'])):
+    #             entry = mongo_collection_sc_gridfs.get(item['sessionID'])
+    #             entry_dict = json.loads(entry.read())
+    #             try:
+    #                 first_bytes = base64.b64decode(entry_dict['eventDetails']['chunk'].encode('ascii'))
+    #                 first_string = first_bytes.decode("ascii").replace("\"",'').replace("data:video/webm;codecs=vp8;base64,", "")
+    #                 print(first_string)
+    #                 second_bytes = base64.b64decode(item['eventDetails']['chunk'].encode('ascii'))
+    #                 second_string = second_bytes.decode("ascii")
+    #                 combined_bytes = (first_string + second_string).encode('ascii').replace("\"",'').replace("data:video/webm;codecs=vp8;base64,", "")
+    #                 combined_base64_bytes = base64.b64encode(combined_bytes)
+    #                 combined_base64 = combined_bytes.decode('ascii')
+    #                 entry_dict['eventDetails']['chunk'] = combined_base64
+    #             except:
+    #                 print("Unexpected error:", sys.exc_info()[0])
+    #                 print(traceback.print_exc())
+    #             mongo_collection_sc_gridfs.delete(item['sessionID'])
+    #             mongo_collection_sc_gridfs.put(json.dumps(item).encode('utf-8'), _id=item['sessionID'])
+    #         else:
+    #             item['eventDetails']['chunk'].replace("\"",'').replace("data:video/webm;codecs=vp8;base64,", "")
+    #             mongo_collection_sc_gridfs.put(json.dumps(item).encode('utf-8'), _id=item['sessionID'])
+    #     else:
+    #         print("Event type not of screenCaptureEvent")

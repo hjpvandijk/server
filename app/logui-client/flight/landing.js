@@ -3,6 +3,8 @@ import Menu from '../applications/menu';
 import TrailItem from '../nav/trail/trailItem';
 import Constants from '../constants';
 import {Link, Redirect} from 'react-router-dom';
+import JSZip from 'jszip' ;
+import { saveAs } from 'file-saver';
 
 class ViewFlightsPage extends React.Component {
 
@@ -200,6 +202,38 @@ class FlightListItem extends React.Component {
             });
     };
 
+    async downloadScreenCaptures(event) {
+        event.preventDefault();
+        console.log("download data")
+        var response = fetch(`${Constants.SERVER_API_ROOT}flight/download_sc/${this.props.id}/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `jwt ${this.props.authToken}`
+            },
+            })
+            .then(resp => resp.json())  // Take the json array that is returned by the server.
+            .then(jsonObj => {             // Create a zipfile containing all screencaptures, named with their corresponding session id.
+                if (jsonObj.size == 0) {
+                    alert('There is no log data available to download for this flight at present.');
+                    return;
+                }
+                console.log(jsonObj);
+
+                let zipFile = new JSZip();
+                
+                for(var i=0; i<jsonObj.length; i++){
+                    var fileName = jsonObj[i]['sessionID'];
+                    zipFile.file(fileName + ".webm", atob(jsonObj[i]['bytes']), {binary: true});
+
+                }
+                zipFile.generateAsync({type:"blob"}).then(function(propsId, content) {
+                    // see FileSaver.js
+                    saveAs(content, "logui-screencaptures-" + String(propsId) + ".zip");
+                }.bind(null, this.props.id)); 
+                
+            });
+    };
+
     render() {
         let fqdnElement = <span className="subtitle mono"><a href={this.props.fqdn} target="_blank">{this.props.fqdn}</a></span>;
 
@@ -219,8 +253,10 @@ class FlightListItem extends React.Component {
                     <span className="subtitle">{this.props.timestampSplit.date.friendly}</span>
                 </span>
                 <span className="sessions centre">{this.props.sessions}</span>
+                <span className="icon"><Link to={`/flight/${this.props.id}/dashboard/`} className="icon-container icon-dashboard dark hover">Go to Dashboard</Link></span>
                 <span className="icon"><Link to={`/flight/${this.props.id}/token/`} className="icon-container icon-token dark hover">Get Token</Link></span>
                 <span className="icon"><Link to="" onClick={e => this.downloadData(e)} className="icon-container icon-download dark hover">Download</Link></span>
+                <span className="icon"><Link to="" onClick={e => this.downloadScreenCaptures(e)} className="icon-container icon-download-sc dark hover">Download Screen Captures</Link></span>
                 <Link to={`/session/${this.props.id}/`} className="row-link">View Flight Sessions</Link>
             </div>
         )
