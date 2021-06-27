@@ -29,15 +29,15 @@ Just like how interaction log data [can be downloaded ](https://github.com/logui
 
 To download screen recordings, go to the [flight listing page](https://github.com/logui-framework/server/wiki/Control-Application-%28Managing-Applications%29#flights) for the application in question. Find the flight from the listing you want to download the screen recordings for, and click the `Download Screen Captures` button, shown below. This will download a .zip file containing all screen recordings for that flight in .webm format. This process might take a short while depending on how many screen recordings need to be downloaded.
 
-![[download_sc.jpg]]
+![download_sc.jpg](./.meta/download_sc.jpg)
 
 ## Navigating to the Dashboard<a name="navigation"></a>
 The LogUI dashboard contains information about a specific flight. To open the dashboard,  go to the [flight listing page](https://github.com/logui-framework/server/wiki/Control-Application-%28Managing-Applications%29#flights) for the application in question. Find the flight from the listing you want to open the dashboard for, and click the **Go to Dashboard** button, shown below.  This will navigate you to another page on which the dashboard will be loaded. The loading of the dashboard might take upwards of 20 seconds, depending on the amount of interaction logs in that flight. 
 
-![[select_dashboard.jpg]]
+![download_sc.jpg](./.meta/select_dashboard.jpg)
 
 ## Dashboard Features<a name="features"></a>
-![[dashboard.jpg]]
+![dashboard.jpg](./.meta/dashboard.jpg)
 
 ### Group Selection Menu
 The Group Selection Menu (A) is a drop-down menu containing all the groups set in the statistics table, as well as an 'All' option. Upon selecting a group, only the sessions within that group are included in the Aggregated Statistics Table and the Graph View.
@@ -57,7 +57,7 @@ Filters (D) are in place so IIR researchers can customize the dashboard to their
 The Statistics Table (E) shows values for the metrics per session. The input box at the front of each row can be used to divide the sessions into groups. By inserting a group ID in this box, that ID is added to the Group Selection Menu.  When having inspected the dashboard and you want to take a closer look at a single session, the Session Dashboard exists. This can be accessed by clicking on the ID of the session of interest.
 
 ### Session Dashboard
-![[sessiondashboard.jpg]]
+![sessiondashboard.jpg](./.meta/sessiondashboard.jpg)
 The Session Dashboard can be used to analyze one specific session. It includes a table containing the values for all metrics within the corresponding flight (A), visuals (B), the screen recording of that session (C), and a table containing all the logs from that session (D). The available graph options are a Time Series Plot and an Event Timeline. When clicking on one of the logs, the screen recording shows the four seconds surrounding that event, so researchers can see what the user saw at that point in time. 
 
 
