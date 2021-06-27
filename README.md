@@ -66,10 +66,10 @@ If anyone wishes to add their own metrics to the LogUI dashboard, this is possib
 
 Firstly, you should create a python script to calculate your metric. This script should contain a function, sharing the same name as the script, that expects  a pandas dataframe containing the logs for a single session. This script should return the value of your metric for that session. The script should be placed in the [worker/logui_apps/control_api/dashboard](https://github.com/hjpvandijk/server/tree/dashboard/worker/logui_apps/control_api/dashboard) directory. Here you will also find some examples.
 
-Furthermore, to include the metric in the dashboard, navigate to the [worker/logui_apps/control_api/flight/views.py](https://github.com/hjpvandijk/server/blob/dashboard/worker/logui_apps/control_api/flight/views.py) script. Here, the metric's name (same as the script and included function name) should be added to the `statisticMethods` array. Now, after restarting the LogUI Server, the metric will be included in the dashboard. 
+Furthermore, to include the metric in the dashboard, navigate to the [worker/logui_apps/control_api/flight/views.py](worker/logui_apps/control_api/flight/views.py) script. Here, the metric's name (same as the script and included function name) should be added to the `statisticMethods` array. Now, after restarting the LogUI Server, the metric will be included in the dashboard. 
 
 ## Adding Dashboard Visuals<a name="visuals"></a> 
-If anyone wishes to add visuals to the LogUI dashboard, this is possible by adding plots in the *render()* method  of  [app/logui-client/flight/dashboard.js](https://github.com/hjpvandijk/server/blob/dashboard/app/logui-client/flight/dashboard.js) for the dashboard or [app/logui-client/session/dashboard.js](https://github.com/hjpvandijk/server/blob/dashboard/app/logui-client/session/dashboard.js) for the session dashbaord. This plot can be included as an option to the graph view by adding a case for it to this if-else block 
+If anyone wishes to add visuals to the LogUI dashboard, this is possible by adding plots in the *render()* method  of  [app/logui-client/flight/dashboard.js](app/logui-client/flight/dashboard.js) for the dashboard or [app/logui-client/session/dashboard.js](app/logui-client/session/dashboard.js) for the session dashbaord. This plot can be included as an option to the graph view by adding a case for it to this if-else block 
 ```javascript
 if(visual == "Box Plots"){
 

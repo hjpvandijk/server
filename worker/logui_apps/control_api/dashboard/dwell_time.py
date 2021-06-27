@@ -6,19 +6,12 @@ import math
 
 def dwell_time(session):
     entry = {}
-    # unique = df['sessionID'].unique()
-    # for i, id in enumerate(unique):
-    #     entries[id] = {}
-    #     if id is None:
-    #         continue
-    #     session = df[ df['sessionID'] == id]
+
     modal_shows =  session[session["eventDetails.name"] == "MODAL_DIALOG_SHOW"]
     modal_hides =  session[session["eventDetails.name"] == "MODAL_DIALOG_HIDE"]
 
-    # entry["dwell_time"] = {} 
     outcome = 0
     if(modal_shows.shape[0] != modal_hides.shape[0]):
-        # raise error("No equal amount of shows as hides")
         entry["total"] = "-"
         entry["average"] = "-"
         return entry

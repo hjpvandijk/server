@@ -244,32 +244,28 @@ class FlightLogDataOneSessionView(APIView):
         # If we get here, then there is a collection -- and we can get the data for it.
         mongo_collection_handle = get_mongo_collection_handle(mongo_db_handle, str(flight.id))
 
-        try:
-            # Get all of the data.
-            # This also omits the _id field that is added by MongoDB -- we don't need it.
-            log_entries = mongo_collection_handle.find({'sessionID': str(sessionID)}, {'_id': False})
-            stream = io.StringIO()
+        # Get all of the data.
+        # This also omits the _id field that is added by MongoDB -- we don't need it.
+        log_entries = mongo_collection_handle.find({'sessionID': str(sessionID)}, {'_id': False})
+        stream = io.StringIO()
 
-            stream.write(f'[{os.linesep}{os.linesep}')
-            
-            # Get the count and if it matches the length...
-            no_entries = log_entries.count()
-            counter = 0
+        stream.write(f'[{os.linesep}{os.linesep}')
+        
+        # Get the count and if it matches the length...
+        no_entries = log_entries.count()
+        counter = 0
 
-            for entry in log_entries:
-                if counter == (no_entries - 1):
-                    stream.write(f'{json.dumps(entry)}{os.linesep}{os.linesep}')
-                    continue
-                
-                stream.write(f'{json.dumps(entry)},{os.linesep}{os.linesep}')
-                counter += 1
+        for entry in log_entries:
+            if counter == (no_entries - 1):
+                stream.write(f'{json.dumps(entry)}{os.linesep}{os.linesep}')
+                continue
             
-            stream.write(f']')
-            stream.seek(0)
-        except:
-            print(sys.exc_info()[0])
-            print(traceback.format_exc())
-            return    
+            stream.write(f'{json.dumps(entry)},{os.linesep}{os.linesep}')
+            counter += 1
+        
+        stream.write(f']')
+        stream.seek(0)
+
         
         response = StreamingHttpResponse(stream, content_type='application/json')
         response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
@@ -305,23 +301,18 @@ class FlightScreenCapturesDownloaderView(APIView):
         # Get the count and if it matches the length...
         no_entries = log_entries.count()
         counter = 0
-        try:
-            for entry in log_entries:
-                encoded = base64.b64encode(entry.read())
-                data = {}
-                data['bytes'] = encoded.decode('ascii')
-                data['sessionID'] = str(entry._id)
-                dict_str = data
+        for entry in log_entries:
+            encoded = base64.b64encode(entry.read())
+            data = {}
+            data['bytes'] = encoded.decode('ascii')
+            data['sessionID'] = str(entry._id)
+            dict_str = data
 
-                if counter == (no_entries - 1):
-                    stream.write(f'{json.dumps(dict_str)}{os.linesep}{os.linesep}')
-                    continue
-                stream.write(f'{json.dumps(dict_str)},{os.linesep}{os.linesep}')
-                counter += 1
-        except:
-            print(sys.exc_info()[0])
-            print(traceback.format_exc())
-            return        
+            if counter == (no_entries - 1):
+                stream.write(f'{json.dumps(dict_str)}{os.linesep}{os.linesep}')
+                continue
+            stream.write(f'{json.dumps(dict_str)},{os.linesep}{os.linesep}')
+            counter += 1        
         
         stream.write(f']')
         stream.seek(0)
@@ -363,41 +354,37 @@ class FlightLogInteractionEventCounterView(APIView):
         # no_entries = log_entries.count()
         log_entries_list = list(log_entries)
         entries = {}
-        try:
-            df = pd.json_normalize(log_entries_list)
-            unique = df['sessionID'].unique()
-            all_values = []
-            for i, id in enumerate(unique):
-                if id is None:
-                    continue
-                session = df[ df['sessionID'] == id]
-                if('eventDetails.name' in session.keys()):
-                    unique_vals = session['eventDetails.name'].unique()
-                    value_counts = session['eventDetails.name'].value_counts()
-                    entries[id] = {}
-                    for val in unique_vals:
-                        if(not (isinstance(val, float) and math.isnan(val))):
-                            if val not in all_values:
-                                all_values.append(val)
-                            count = value_counts.get(val)
-                            entries[id][val] = int(count)
-  
-                
-            stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
-            stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
 
-            stream.write(f']')
-            stream.seek(0)
+        df = pd.json_normalize(log_entries_list)
+        unique = df['sessionID'].unique()
+        all_values = []
+        for i, id in enumerate(unique):
+            if id is None:
+                continue
+            session = df[ df['sessionID'] == id]
+            if('eventDetails.name' in session.keys()):
+                unique_vals = session['eventDetails.name'].unique()
+                value_counts = session['eventDetails.name'].value_counts()
+                entries[id] = {}
+                for val in unique_vals:
+                    if(not (isinstance(val, float) and math.isnan(val))):
+                        if val not in all_values:
+                            all_values.append(val)
+                        count = value_counts.get(val)
+                        entries[id][val] = int(count)
 
-            response = StreamingHttpResponse(stream, content_type='application/json')
-            response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
             
-            mongo_connection.close()
-            return response
-        except:
-            print(sys.exc_info()[0])
-            print(traceback.format_exc())
-            return 
+        stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
+        stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
+
+        stream.write(f']')
+        stream.seek(0)
+
+        response = StreamingHttpResponse(stream, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
+        
+        mongo_connection.close()
+        return response
 
 class FlightLogInteractionEventTimelineView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -427,23 +414,21 @@ class FlightLogInteractionEventTimelineView(APIView):
         stream.write(f'[{os.linesep}{os.linesep}')
         
         # Get the count and if it matches the length...
-        # no_entries = log_entries.count()
         log_entries_list = list(log_entries)
         entries = {}
-        try:
-            # log_entries_json = json.loads(log_entries_list)
-            df = pd.json_normalize(log_entries_list)
-            if('eventDetails.name' in df.keys()):
+           
+        df = pd.json_normalize(log_entries_list)
+        if('eventDetails.name' in df.keys()):
 
-                unique = df['eventDetails.name'].unique()
-                for name in (unique):
-                    event = df[ df['eventDetails.name'] == name]
-                    sortedEvent = event.sort_values(by="timestamps.sinceSessionStartMillis")
-                    sortedTime = sortedEvent["timestamps.sinceSessionStartMillis"].to_numpy()
-                    sortedIDs = sortedEvent["sessionID"].to_numpy()
-                    entries[name] = {}
-                    entries[name]["timestamps"] = [int(x) for x in sortedTime]
-                    entries[name]["sessionIDs"] = sortedIDs.tolist()
+            unique = df['eventDetails.name'].unique()
+            for name in (unique):
+                event = df[ df['eventDetails.name'] == name]
+                sortedEvent = event.sort_values(by="timestamps.sinceSessionStartMillis")
+                sortedTime = sortedEvent["timestamps.sinceSessionStartMillis"].to_numpy()
+                sortedIDs = sortedEvent["sessionID"].to_numpy()
+                entries[name] = {}
+                entries[name]["timestamps"] = [int(x) for x in sortedTime]
+                entries[name]["sessionIDs"] = sortedIDs.tolist()
 
                 
             stream.write(f'{json.dumps(entries)}{os.linesep}{os.linesep}')
@@ -456,10 +441,6 @@ class FlightLogInteractionEventTimelineView(APIView):
             
             mongo_connection.close()
             return response
-        except:
-            print(sys.exc_info()[0])
-            print(traceback.format_exc())
-            return 
 
 class FlightLogStatisticsView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -492,40 +473,36 @@ class FlightLogStatisticsView(APIView):
         # no_entries = log_entries.count()
         log_entries_list = list(log_entries)
         entries = {}
-        try:
-            # log_entries_json = json.loads(log_entries_list)
-            df = pd.json_normalize(log_entries_list)
-            unique = df['sessionID'].unique()
-            all_values = []
-            for i, id in enumerate(unique):
-                if id is None:
-                    continue
-                session = df[ df['sessionID'] == id]
-                entries[id] = {}
-                for func in statisticMethods:
-                    entry = func(session)
-                    if isinstance(entry, dict) and "average" in entry.keys() and "total" in entry.keys():   #To do: make adaptive for all keys in dict
-                        entries[id][func.__name__ + "_total"] = entry["total"]
-                        entries[id][func.__name__ + "_average"] = entry["average"]
-                        if func.__name__ + "_total" not in all_values:
-                            all_values.append(func.__name__ +  "_total")
-                            all_values.append(func.__name__ +  "_average")
-                    else:
-                        entries[id][func.__name__] = entry
-                        if func.__name__ not in all_values:
-                            all_values.append(func.__name__)
-            stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
-            stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
 
-            stream.write(f']')
-            stream.seek(0)
+        # log_entries_json = json.loads(log_entries_list)
+        df = pd.json_normalize(log_entries_list)
+        unique = df['sessionID'].unique()
+        all_values = []
+        for i, id in enumerate(unique):
+            if id is None:
+                continue
+            session = df[ df['sessionID'] == id]
+            entries[id] = {}
+            for func in statisticMethods:
+                entry = func(session)
+                if isinstance(entry, dict) and "average" in entry.keys() and "total" in entry.keys():   #To do: make adaptive for all keys in dict
+                    entries[id][func.__name__ + "_total"] = entry["total"]
+                    entries[id][func.__name__ + "_average"] = entry["average"]
+                    if func.__name__ + "_total" not in all_values:
+                        all_values.append(func.__name__ +  "_total")
+                        all_values.append(func.__name__ +  "_average")
+                else:
+                    entries[id][func.__name__] = entry
+                    if func.__name__ not in all_values:
+                        all_values.append(func.__name__)
+        stream.write(f'{json.dumps(entries)},{os.linesep}{os.linesep}')
+        stream.write(f'{json.dumps(all_values)}{os.linesep}{os.linesep}')
 
-            response = StreamingHttpResponse(stream, content_type='application/json')
-            response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
-            
-            mongo_connection.close()
-            return response
-        except:
-            print(sys.exc_info()[0])
-            print(traceback.format_exc())
-            return
+        stream.write(f']')
+        stream.seek(0)
+
+        response = StreamingHttpResponse(stream, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename=logui-{str(flight.id)}.log'
+        
+        mongo_connection.close()
+        return response
