@@ -64,7 +64,7 @@ The Session Dashboard can be used to analyze one specific session. It includes a
 ## Adding Dashboard Metrics<a name="metrics"></a> 
 If anyone wishes to add their own metrics to the LogUI dashboard, this is possible by making some minor adjustments in the code. 
 
-Firstly, you should create a python script to calculate your metric. This script should contain a function, sharing the same name as the script, that expects  a pandas dataframe containing the logs for a single session. This script should return the value of your metric for that session. The script should be placed in the [worker/logui_apps/control_api/dashboard](https://github.com/hjpvandijk/server/tree/dashboard/worker/logui_apps/control_api/dashboard) directory. Here you will also find some examples.
+Firstly, you should create a python script to calculate your metric. This script should contain a function, sharing the same name as the script, that expects  a pandas dataframe containing the logs for a single session. This script should return the value of your metric for that session. The script should be placed in the [worker/logui_apps/control_api/dashboard](worker/logui_apps/control_api/dashboard) directory. Here you will also find some examples.
 
 Furthermore, to include the metric in the dashboard, navigate to the [worker/logui_apps/control_api/flight/views.py](worker/logui_apps/control_api/flight/views.py) script. Here, the metric's name (same as the script and included function name) should be added to the `statisticMethods` array. Now, after restarting the LogUI Server, the metric will be included in the dashboard. 
 
